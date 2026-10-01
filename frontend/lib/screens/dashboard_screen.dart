@@ -10,7 +10,8 @@ import 'chicken_management_screen.dart';
 import 'feed_record_screen.dart';
 import 'cost_record_screen.dart';
 import 'statistics_screen.dart';
-import 'user_management_screen.dart';
+import 'data_screen.dart';
+import 'settings_screen.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -21,6 +22,9 @@ class DashboardScreen extends ConsumerStatefulWidget {
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   int _selectedIndex = 0;
+
+  static const int _productionTab = 1;
+  static const int _dataTab = 2;
 
   @override
   void initState() {
@@ -38,88 +42,75 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     ref.read(costRecordProvider.notifier).fetchRecords();
   }
 
+  void _goToTab(int index) {
+    setState(() => _selectedIndex = index);
+  }
+
+  void _openScreen(Widget screen) {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => screen),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final auth = ref.watch(authProvider);
-    final user = auth.user;
-
     final screens = [
-      _buildHomeScreen(auth),
+      _buildHomeScreen(),
       const EggProductionScreen(),
-      const ChickenManagementScreen(),
-      const FeedRecordScreen(),
-      const CostRecordScreen(),
+      const DataScreen(),
       const StatisticsScreen(),
+      const SettingsScreen(),
     ];
-
-    if (user?.isAdmin == true) {
-      screens.add(const UserManagementScreen());
-    }
-
-    final navItems = [
-      const BottomNavigationBarItem(
-        icon: Icon(Icons.home),
-        label: 'Beranda',
-      ),
-      const BottomNavigationBarItem(
-        icon: Icon(Icons.egg),
-        label: 'Produksi',
-      ),
-      const BottomNavigationBarItem(
-        icon: Icon(Icons.pets),
-        label: 'Ayam',
-      ),
-      const BottomNavigationBarItem(
-        icon: Icon(Icons.grain),
-        label: 'Pakan',
-      ),
-      const BottomNavigationBarItem(
-        icon: Icon(Icons.attach_money),
-        label: 'Biaya',
-      ),
-      const BottomNavigationBarItem(
-        icon: Icon(Icons.bar_chart),
-        label: 'Statistik',
-      ),
-    ];
-
-    if (user?.isAdmin == true) {
-      navItems.add(const BottomNavigationBarItem(
-        icon: Icon(Icons.people),
-        label: 'User',
-      ));
-    }
 
     return Scaffold(
-      body: screens[_selectedIndex],
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: screens,
+      ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
-        onTap: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
-        },
+        onTap: _goToTab,
         type: BottomNavigationBarType.fixed,
-        items: navItems,
+        selectedItemColor: Theme.of(context).colorScheme.primary,
+        unselectedItemColor: Colors.grey[600],
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home_outlined),
+            activeIcon: Icon(Icons.home),
+            label: 'Beranda',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.egg_outlined),
+            activeIcon: Icon(Icons.egg),
+            label: 'Produksi',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.folder_outlined),
+            activeIcon: Icon(Icons.folder),
+            label: 'Data',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.bar_chart_outlined),
+            activeIcon: Icon(Icons.bar_chart),
+            label: 'Statistik',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings_outlined),
+            activeIcon: Icon(Icons.settings),
+            label: 'Pengaturan',
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildHomeScreen(AuthState auth) {
+  Widget _buildHomeScreen() {
+    final auth = ref.watch(authProvider);
     final user = auth.user;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Beranda'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              // Just logout - GoRouter redirect will switch to LoginScreen
-              await ref.read(authProvider.notifier).logout();
-            },
-          ),
-        ],
       ),
       body: RefreshIndicator(
         onRefresh: () async => _loadData(),
@@ -159,6 +150,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                   ?.copyWith(fontWeight: FontWeight.bold),
                             ),
                             Container(
+                              margin: const EdgeInsets.only(top: 6),
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 8,
                                 vertical: 2,
@@ -222,27 +214,55 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     icon: Icons.add,
                     title: 'Catat Produksi',
                     color: Colors.orange,
-                    onTap: () => setState(() => _selectedIndex = 1),
+                    onTap: () => _goToTab(_productionTab),
                   ),
                   _buildQuickAction(
                     icon: Icons.pets,
                     title: 'Kelola Ayam',
                     color: Colors.green,
-                    onTap: () => setState(() => _selectedIndex = 2),
+                    onTap: () => _openScreen(const ChickenManagementScreen()),
                   ),
                   _buildQuickAction(
                     icon: Icons.grain,
                     title: 'Catat Pakan',
                     color: Colors.brown,
-                    onTap: () => setState(() => _selectedIndex = 3),
+                    onTap: () => _openScreen(const FeedRecordScreen()),
                   ),
                   _buildQuickAction(
                     icon: Icons.attach_money,
                     title: 'Catat Biaya',
                     color: Colors.red,
-                    onTap: () => setState(() => _selectedIndex = 4),
+                    onTap: () => _openScreen(const CostRecordScreen()),
                   ),
                 ],
+              ),
+              const SizedBox(height: 16),
+
+              // Shortcut to Data tab
+              Card(
+                clipBehavior: Clip.antiAlias,
+                child: InkWell(
+                  onTap: () => _goToTab(_dataTab),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.folder,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        const SizedBox(width: 12),
+                        const Expanded(
+                          child: Text(
+                            'Lihat semua data di tab Data',
+                            style: TextStyle(fontWeight: FontWeight.w500),
+                          ),
+                        ),
+                        const Icon(Icons.chevron_right, color: Colors.grey),
+                      ],
+                    ),
+                  ),
+                ),
               ),
             ],
           ),
