@@ -119,8 +119,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   Widget _buildHomeScreen() {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Beranda'),
-      ),
+          //title: const Text('Beranda'),
+          ),
       body: RefreshIndicator(
         onRefresh: () async => _loadData(),
         child: SingleChildScrollView(
@@ -272,25 +272,28 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   Widget _buildHeroCta() {
     final today = DateTime.now();
     final eggState = ref.watch(eggProductionProvider);
-    final todayProductions = eggState.productions
-        .where((p) => _isSameDay(p.date, today))
-        .toList();
+    final todayProductions =
+        eggState.productions.where((p) => _isSameDay(p.date, today)).toList();
     final hasRecord = todayProductions.isNotEmpty;
     final todayEggs =
         todayProductions.fold<int>(0, (sum, p) => sum + p.totalEggs);
 
+    // Warna mengikuti tema yang dipilih di Pengaturan
+    final primary = Theme.of(context).colorScheme.primary;
+    final dark = Color.lerp(primary, Colors.black, 0.25)!;
+
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFFFFA726), Color(0xFFF57C00)],
+        gradient: LinearGradient(
+          colors: [primary, dark],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.orange.withOpacity(0.35),
+            color: primary.withOpacity(0.35),
             blurRadius: 12,
             offset: const Offset(0, 6),
           ),
@@ -352,7 +355,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   ),
                   child: Icon(
                     hasRecord ? Icons.edit : Icons.add,
-                    color: const Color(0xFFF57C00),
+                    color: dark,
                   ),
                 ),
               ],
@@ -491,8 +494,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   /// Gabungkan produksi telur, pakan, dan biaya → urutkan terbaru → 5 teratas
   List<_ActivityItem> _recentActivities() {
-    final eggs =
-        ref.watch(eggProductionProvider.select((s) => s.productions));
+    final eggs = ref.watch(eggProductionProvider.select((s) => s.productions));
     final feeds = ref.watch(feedRecordProvider.select((s) => s.records));
     final costs = ref.watch(costRecordProvider.select((s) => s.records));
     final dateFormat = DateFormat('dd MMM yyyy • HH:mm');
@@ -520,8 +522,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             color: Colors.red,
             title: 'Biaya ${r.category}',
             subtitle: dateFormat.format(r.createdAt),
-            value:
-                'Rp ${NumberFormat('#,###', 'id_ID').format(r.amount)}',
+            value: 'Rp ${NumberFormat('#,###', 'id_ID').format(r.amount)}',
           )),
     ];
 

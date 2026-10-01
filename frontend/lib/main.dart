@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timezone/data/latest.dart' as tz;
+import 'providers/theme_color_provider.dart';
 import 'router/app_router.dart';
 import 'utils/notification_service.dart';
 
@@ -22,6 +23,8 @@ class MyApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
+    final themeIndex = ref.watch(themeColorProvider.select((s) => s.index));
+    final seedColor = themeColorOptions[themeIndex].seed;
 
     return MaterialApp.router(
       title: 'Egg Production App',
@@ -29,7 +32,7 @@ class MyApp extends ConsumerWidget {
       routerConfig: router,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFFFFA726),
+          seedColor: seedColor,
           brightness: Brightness.light,
         ),
         useMaterial3: true,

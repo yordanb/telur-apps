@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../providers/auth_provider.dart';
+import '../providers/theme_color_provider.dart';
 import '../services/api_service.dart';
 import '../utils/notification_service.dart';
 import 'user_management_screen.dart';
@@ -93,6 +94,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final auth = ref.watch(authProvider);
     final user = auth.user;
     final isAdmin = user?.isAdmin == true;
+    final themeState = ref.watch(themeColorProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -188,6 +190,32 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
           const SizedBox(height: 16),
 
+          // ============ Tema Aplikasi ============
+          _SectionLabel('Tema Aplikasi'),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  for (int i = 0; i < themeColorOptions.length; i++) ...[
+                    if (i > 0) const SizedBox(width: 12),
+                    Expanded(
+                      child: _ColorChoice(
+                        color: themeColorOptions[i].seed,
+                        label: themeColorOptions[i].name,
+                        selected: themeState.index == i,
+                        onTap: () => ref
+                            .read(themeColorProvider.notifier)
+                            .select(i),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
           // ============ Manajemen User (admin only) ============
           if (isAdmin) ...[
             _SectionLabel('Administrasi'),
@@ -279,6 +307,74 @@ class _SectionLabel extends StatelessWidget {
               fontWeight: FontWeight.bold,
               color: Colors.grey[700],
             ),
+      ),
+    );
+  }
+}
+
+/// Satu pilihan warna tema (bulatan warna + label + centang jika terpilih).
+class _ColorChoice extends StatelessWidget {
+  const _ColorChoice({
+    required this.color,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final Color color;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+        decoration: BoxDecoration(
+          color: selected ? color.withOpacity(0.10) : Colors.grey[50],
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: selected ? color : Colors.grey[300]!,
+            width: selected ? 2 : 1,
+          ),
+        ),
+        child: Column(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: color,
+                shape: BoxShape.circle,
+                boxShadow: selected
+                    ? [
+                        BoxShadow(
+                          color: color.withOpacity(0.5),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
+                        ),
+                      ]
+                    : null,
+              ),
+              child: selected
+                  ? const Icon(Icons.check, color: Colors.white, size: 22)
+                  : null,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: selected ? FontWeight.bold : FontWeight.w500,
+                color: selected ? color : Colors.grey[700],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
