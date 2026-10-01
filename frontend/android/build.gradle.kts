@@ -14,6 +14,10 @@ subprojects {
 }
 subprojects {
     project.evaluationDependsOn(":app")
+    // Suppress "source/target value 8 is obsolete" warnings from third-party plugins
+    tasks.withType<JavaCompile> {
+        options.compilerArgs.add("-Xlint:-options")
+    }
 }
 
 tasks.register<Delete>("clean") {
