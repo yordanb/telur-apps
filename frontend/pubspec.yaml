@@ -31,9 +31,9 @@ dev_dependencies:
 flutter_launcher_icons:
   android: true
   ios: false
-  image_path: "assets/icon/endog_icon.png"
-  adaptive_icon_background: "assets/icon/endog_bg.png"
-  adaptive_icon_foreground: "assets/icon/endog_fg.png"
+  image_path: "assets/icon/endog_gemini_icon.png"
+  adaptive_icon_background: "assets/icon/endog_gemini_bg.png"
+  adaptive_icon_foreground: "assets/icon/endog_gemini_fg.png"
 
 flutter:
   uses-material-design: true
