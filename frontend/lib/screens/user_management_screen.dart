@@ -116,6 +116,8 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
     final fullNameController = TextEditingController();
     final passwordController = TextEditingController();
     String selectedRole = 'pegawai';
+    String? errorText;
+    bool isSaving = false;
 
     showDialog(
       context: context,
@@ -161,54 +163,114 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
                     });
                   },
                 ),
+                // Pesan error dari server ditampilkan langsung di dalam dialog
+                if (errorText != null) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.red[50],
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.red.shade300),
+                    ),
+                    child: Text(
+                      errorText!,
+                      style: TextStyle(color: Colors.red[800], fontSize: 13),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
+              onPressed: isSaving ? null : () => Navigator.pop(dialogContext),
               child: const Text('Batal'),
             ),
             ElevatedButton(
-              onPressed: () async {
-                final userData = {
-                  'username': usernameController.text,
-                  'email': emailController.text,
-                  'full_name': fullNameController.text,
-                  'password': passwordController.text,
-                  'role': selectedRole,
-                };
+              onPressed: isSaving
+                  ? null
+                  : () async {
+                      setDialogState(() {
+                        errorText = null;
+                        isSaving = true;
+                      });
 
-                try {
-                  final response = await ApiService.post('/users/', userData);
-                  if (response.statusCode == 200 || response.statusCode == 201) {
-                    Navigator.pop(dialogContext);
-                    _fetchUsers();
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('User berhasil ditambahkan'),
-                          backgroundColor: Colors.green,
-                        ),
-                      );
-                    }
-                  }
-                } catch (e) {
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Gagal menambahkan user: $e'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
-                }
-              },
-              child: const Text('Simpan'),
+                      final userData = {
+                        'username': usernameController.text,
+                        'email': emailController.text,
+                        'full_name': fullNameController.text,
+                        'password': passwordController.text,
+                        'role': selectedRole,
+                      };
+
+                      try {
+                        final response =
+                            await ApiService.post('/users/', userData);
+                        if (response.statusCode == 200 ||
+                            response.statusCode == 201) {
+                          if (dialogContext.mounted) {
+                            Navigator.pop(dialogContext);
+                          }
+                          _fetchUsers();
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('User berhasil ditambahkan'),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                          }
+                        } else {
+                          // Respons error (422/403/500) → tampilkan di dialog
+                          final message = _parseErrorMessage(
+                              response.statusCode, response.body);
+                          if (dialogContext.mounted) {
+                            setDialogState(() {
+                              errorText = message;
+                              isSaving = false;
+                            });
+                          }
+                        }
+                      } catch (e) {
+                        if (dialogContext.mounted) {
+                          setDialogState(() {
+                            errorText = 'Koneksi gagal: $e';
+                            isSaving = false;
+                          });
+                        }
+                      }
+                    },
+              child: isSaving
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Simpan'),
             ),
           ],
         ),
       ),
     );
+  }
+
+  /// Ekstrak pesan error dari respons FastAPI ({"detail": "..."} atau
+  /// daftar error validasi Pydantic [{"msg": "..."}]).
+  String _parseErrorMessage(int statusCode, String body) {
+    try {
+      final data = jsonDecode(body);
+      final detail = data is Map ? data['detail'] : null;
+      if (detail is String) return detail;
+      if (detail is List) {
+        return detail
+            .map((e) => e is Map ? (e['msg'] ?? e).toString() : e.toString())
+            .join('\n');
+      }
+    } catch (_) {
+      // body bukan JSON valid
+    }
+    return 'Gagal menyimpan data (HTTP $statusCode)';
   }
 }
