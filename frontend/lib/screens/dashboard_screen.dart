@@ -5,7 +5,6 @@ import '../providers/egg_production_provider.dart';
 import '../providers/chicken_management_provider.dart';
 import '../providers/feed_record_provider.dart';
 import '../providers/cost_record_provider.dart';
-import 'login_screen.dart';
 import 'egg_production_screen.dart';
 import 'chicken_management_screen.dart';
 import 'feed_record_screen.dart';
@@ -126,12 +125,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () async {
+              // Just logout - the Consumer in main.dart will
+              // automatically switch back to LoginScreen
               await auth.logout();
-              if (mounted) {
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(builder: (_) => const LoginScreen()),
-                );
-              }
             },
           ),
         ],
