@@ -23,7 +23,7 @@ class AuthProvider with ChangeNotifier {
       try {
         final response = await ApiService.get('/auth/me');
         if (response.statusCode == 200) {
-          _user = User.fromJson(response.body);
+          _user = User.fromJson(jsonDecode(response.body));
           _isAuthenticated = true;
         } else {
           await logout();
@@ -51,7 +51,7 @@ class AuthProvider with ChangeNotifier {
         await ApiService.saveToken(data['access_token']);
 
         final userResponse = await ApiService.get('/auth/me');
-        _user = User.fromJson(userResponse.body);
+        _user = User.fromJson(jsonDecode(userResponse.body));
         _isAuthenticated = true;
         _isLoading = false;
         notifyListeners();
