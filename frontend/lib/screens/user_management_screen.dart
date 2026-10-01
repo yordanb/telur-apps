@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
@@ -29,7 +30,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
     try {
       final response = await ApiService.get('/users/');
       if (response.statusCode == 200) {
-        final List<dynamic> data = response.body as List<dynamic>;
+        final List<dynamic> data = jsonDecode(response.body);
         _users = data.map((json) => User.fromJson(json as Map<String, dynamic>)).toList();
       }
     } catch (e) {
