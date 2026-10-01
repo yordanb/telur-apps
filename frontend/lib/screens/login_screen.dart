@@ -31,12 +31,14 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       if (!success && mounted) {
+        final auth = Provider.of<AuthProvider>(context, listen: false);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Login gagal. Periksa username dan password Anda.'),
+          SnackBar(
+            content: Text(auth.error ?? 'Login gagal. Periksa username dan password Anda.'),
             backgroundColor: Colors.red,
           ),
         );
+        auth.clearError();
       }
     }
   }

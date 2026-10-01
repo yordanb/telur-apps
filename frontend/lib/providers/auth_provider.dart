@@ -8,10 +8,12 @@ class AuthProvider with ChangeNotifier {
   User? _user;
   bool _isLoading = false;
   bool _isAuthenticated = false;
+  String? _error;
 
   User? get user => _user;
   bool get isLoading => _isLoading;
   bool get isAuthenticated => _isAuthenticated;
+  String? get error => _error;
 
   AuthProvider() {
     checkAuth();
@@ -25,11 +27,14 @@ class AuthProvider with ChangeNotifier {
         if (response.statusCode == 200) {
           _user = User.fromJson(jsonDecode(response.body));
           _isAuthenticated = true;
+          _error = null;
         } else {
           await logout();
+          _error = 'Session expired. Please login again.';
         }
       } catch (e) {
         await logout();
+        _error = 'Network error. Please check your connection.';
       }
     }
     notifyListeners();
@@ -37,6 +42,7 @@ class AuthProvider with ChangeNotifier {
 
   Future<bool> login(String username, String password) async {
     _isLoading = true;
+    _error = null;
     notifyListeners();
 
     try {
@@ -54,15 +60,23 @@ class AuthProvider with ChangeNotifier {
         _user = User.fromJson(jsonDecode(userResponse.body));
         _isAuthenticated = true;
         _isLoading = false;
+        _error = null;
         notifyListeners();
         return true;
+      } else if (response.statusCode == 401) {
+        _isLoading = false;
+        _error = 'Username atau password salah';
+        notifyListeners();
+        return false;
       } else {
         _isLoading = false;
+        _error = 'Login failed. Please try again.';
         notifyListeners();
         return false;
       }
     } catch (e) {
       _isLoading = false;
+      _error = 'Network error: ${e.toString()}';
       notifyListeners();
       return false;
     }
@@ -72,6 +86,12 @@ class AuthProvider with ChangeNotifier {
     await ApiService.removeToken();
     _user = null;
     _isAuthenticated = false;
+    _error = null;
+    notifyListeners();
+  }
+
+  void clearError() {
+    _error = null;
     notifyListeners();
   }
 }
