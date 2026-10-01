@@ -30,6 +30,14 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
             detail="Email already registered"
         )
 
+    # Keamanan: registrasi publik hanya boleh membuat pegawai.
+    # Pengecualian saat database masih kosong (bootstrap / pemulihan pasca-data-hilang):
+    # role yang diminta diizinkan agar admin bisa dibuat ulang tanpa akses DB langsung.
+    # Admin/investor lainnya dibuat lewat /api/users/ (khusus admin).
+    role = user.role
+    if db.query(User).first() is not None:
+        role = UserRole.pegawai
+
     # Create new user
     hashed_password = get_password_hash(user.password)
     db_user = User(
@@ -37,7 +45,7 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
         email=user.email,
         hashed_password=hashed_password,
         full_name=user.full_name,
-        role=user.role
+        role=role
     )
     db.add(db_user)
     db.commit()

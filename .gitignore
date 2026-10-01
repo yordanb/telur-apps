@@ -32,6 +32,7 @@ dmypy.json
 *.db
 *.sqlite
 *.sqlite3
+backend/backups/
 
 # IDEs
 .vscode/

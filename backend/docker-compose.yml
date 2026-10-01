@@ -1,11 +1,9 @@
-version: '3.8'
-
 services:
   api:
     build: .
     container_name: egg-api
     ports:
-      - "8000:8000"
+      - "8800:8000"
     environment:
       - DATABASE_URL=${DATABASE_URL}
       - SECRET_KEY=${SECRET_KEY}
@@ -29,6 +27,41 @@ services:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5445:5432"
+    restart: unless-stopped
+    networks:
+      - egg-network
+
+  # Backup otomatis: pg_dump tiap 6 jam, simpan 14 hari di backend/backups/
+  # Restore: gunzip < backups/egg_XXXX.sql.gz | docker exec -i egg-db psql -U <user> -d <db>
+  backup:
+    image: postgres:15
+    container_name: egg-backup
+    depends_on:
+      - db
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - PGPASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - ./backups:/backups
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        mkdir -p /backups
+        while true; do
+          ts=$$(date +%Y%m%d_%H%M%S)
+          if pg_dump -h db -U "$${POSTGRES_USER}" "$${POSTGRES_DB}" > /tmp/dump.sql \
+             && gzip -f /tmp/dump.sql \
+             && mv /tmp/dump.sql.gz "/backups/egg_$${ts}.sql.gz"; then
+            echo "[backup] egg_$${ts}.sql.gz OK"
+          else
+            echo "[backup] FAILED $${ts}"
+            rm -f /tmp/dump.sql /tmp/dump.sql.gz "/backups/egg_$${ts}.sql.gz"
+          fi
+          find /backups -name 'egg_*.sql.gz' -mtime +14 -delete
+          sleep 21600
+        done
     restart: unless-stopped
     networks:
       - egg-network
