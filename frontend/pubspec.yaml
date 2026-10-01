@@ -25,6 +25,15 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.0
+  flutter_launcher_icons: ^0.14.3
+
+# Generator icon launcher (python assets/icon/generate_icon.py -> PNG)
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/icon/endog_icon.png"
+  adaptive_icon_background: "assets/icon/endog_bg.png"
+  adaptive_icon_foreground: "assets/icon/endog_fg.png"
 
 flutter:
   uses-material-design: true

@@ -27,7 +27,7 @@ class MyApp extends ConsumerWidget {
     final seedColor = themeColorOptions[themeIndex].seed;
 
     return MaterialApp.router(
-      title: 'Egg Production App',
+      title: 'Endog',
       debugShowCheckedModeBanner: false,
       routerConfig: router,
       theme: ThemeData(

@@ -33,8 +33,8 @@ class NotificationService {
     const AndroidNotificationDetails androidDetails =
         AndroidNotificationDetails(
       'egg_production_channel',
-      'Egg Production Notifications',
-      channelDescription: 'Notifications for egg production reminders',
+      'Notifikasi Endog',
+      channelDescription: 'Pengingat pencatatan produksi telur',
       importance: Importance.high,
       priority: Priority.high,
     );
