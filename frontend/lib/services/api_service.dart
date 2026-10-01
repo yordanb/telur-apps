@@ -3,8 +3,8 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  // Change this to your VPS IP or domain
-  static const String baseUrl = 'http://YOUR_VPS_IP:8000/api';
+  // API Backend URL
+  static const String baseUrl = 'https://egg.mibt.my.id/api';
 
   static Future<String?> getToken() async {
     final prefs = await SharedPreferences.getInstance();
