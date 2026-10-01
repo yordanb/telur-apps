@@ -51,18 +51,28 @@ class AuthProvider with ChangeNotifier {
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
         body: 'username=$username&password=$password',
       );
+      print('Login response: ${response.statusCode} - ${response.body}');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         await ApiService.saveToken(data['access_token']);
 
         final userResponse = await ApiService.get('/auth/me');
-        _user = User.fromJson(jsonDecode(userResponse.body));
-        _isAuthenticated = true;
-        _isLoading = false;
-        _error = null;
-        notifyListeners();
-        return true;
+        print('Auth/me response: ${userResponse.statusCode} - ${userResponse.body}');
+        
+        if (userResponse.statusCode == 200) {
+          _user = User.fromJson(jsonDecode(userResponse.body));
+          _isAuthenticated = true;
+          _isLoading = false;
+          _error = null;
+          notifyListeners();
+          return true;
+        } else {
+          _isLoading = false;
+          _error = 'Gagal mengambil data user (HTTP ${userResponse.statusCode})';
+          notifyListeners();
+          return false;
+        }
       } else if (response.statusCode == 401) {
         _isLoading = false;
         _error = 'Username atau password salah';
@@ -75,6 +85,7 @@ class AuthProvider with ChangeNotifier {
         return false;
       }
     } catch (e) {
+      print('Login exception: $e');
       _isLoading = false;
       _error = 'Network error: ${e.toString()}';
       notifyListeners();
