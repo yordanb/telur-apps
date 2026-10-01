@@ -51,13 +51,19 @@ services:
         mkdir -p /backups
         while true; do
           ts=$$(date +%Y%m%d_%H%M%S)
-          if pg_dump -h db -U "$${POSTGRES_USER}" "$${POSTGRES_DB}" > /tmp/dump.sql \
-             && gzip -f /tmp/dump.sql \
-             && mv /tmp/dump.sql.gz "/backups/egg_$${ts}.sql.gz"; then
+          ok=""
+          for i in $$(seq 1 60); do
+            if pg_dump -h db -U "$${POSTGRES_USER}" "$${POSTGRES_DB}" > /tmp/dump.sql 2>/dev/null; then
+              ok=1; break
+            fi
+            echo "[backup] menunggu db siap (percobaan $$i)"
+            sleep 5
+          done
+          if [ -n "$${ok}" ] && gzip -f /tmp/dump.sql && mv /tmp/dump.sql.gz "/backups/egg_$${ts}.sql.gz"; then
             echo "[backup] egg_$${ts}.sql.gz OK"
           else
             echo "[backup] FAILED $${ts}"
-            rm -f /tmp/dump.sql /tmp/dump.sql.gz "/backups/egg_$${ts}.sql.gz"
+            rm -f /tmp/dump.sql /tmp/dump.sql.gz
           fi
           find /backups -name 'egg_*.sql.gz' -mtime +14 -delete
           sleep 21600
