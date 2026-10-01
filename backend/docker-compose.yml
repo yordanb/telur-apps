@@ -28,7 +28,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "5445:5432"
     restart: unless-stopped
     networks:
       - egg-network
