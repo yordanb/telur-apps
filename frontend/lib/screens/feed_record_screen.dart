@@ -1,0 +1,475 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
+import '../providers/feed_record_provider.dart';
+import '../models/feed_record.dart';
+
+class FeedRecordScreen extends StatefulWidget {
+  const FeedRecordScreen({super.key});
+
+  @override
+  State<FeedRecordScreen> createState() => _FeedRecordScreenState();
+}
+
+class _FeedRecordScreenState extends State<FeedRecordScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<FeedRecordProvider>(context, listen: false).fetchRecords();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Pencatatan Pakan'),
+      ),
+      body: Consumer<FeedRecordProvider>(
+        builder: (context, provider, _) {
+          if (provider.isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (provider.error != null) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                  const SizedBox(height: 16),
+                  Text(provider.error!),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () => provider.fetchRecords(),
+                    child: const Text('Coba Lagi'),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          if (provider.records.isEmpty) {
+            return const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.grain, size: 48, color: Colors.grey),
+                  SizedBox(height: 16),
+                  Text('Belum ada data pakan'),
+                ],
+              ),
+            );
+          }
+
+          return RefreshIndicator(
+            onRefresh: () => provider.fetchRecords(),
+            child: ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: provider.records.length,
+              itemBuilder: (context, index) {
+                final record = provider.records[index];
+                return _buildRecordCard(record, provider);
+              },
+            ),
+          );
+        },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _showAddDialog(context),
+        child: const Icon(Icons.add),
+      ),
+    );
+  }
+
+  Widget _buildRecordCard(FeedRecord record, FeedRecordProvider provider) {
+    final formatter = NumberFormat('#,###', 'id_ID');
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  DateFormat('dd MMMM yyyy').format(record.date),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                PopupMenuButton(
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(
+                      value: 'edit',
+                      child: Row(
+                        children: [
+                          Icon(Icons.edit),
+                          SizedBox(width: 8),
+                          Text('Edit'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete, color: Colors.red),
+                          SizedBox(width: 8),
+                          Text('Hapus', style: TextStyle(color: Colors.red)),
+                        ],
+                      ),
+                    ),
+                  ],
+                  onSelected: (value) {
+                    if (value == 'edit') {
+                      _showEditDialog(context, record);
+                    } else if (value == 'delete') {
+                      _showDeleteDialog(context, record, provider);
+                    }
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                _buildInfoChip(
+                  icon: Icons.grain,
+                  label: 'Jenis Pakan',
+                  value: record.feedType,
+                  color: Colors.brown,
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                _buildInfoChip(
+                  icon: Icons.scale,
+                  label: 'Jumlah',
+                  value: '${record.quantityKg} kg',
+                  color: Colors.blue,
+                ),
+                const SizedBox(width: 8),
+                _buildInfoChip(
+                  icon: Icons.attach_money,
+                  label: 'Harga/kg',
+                  value: 'Rp ${formatter.format(record.costPerKg)}',
+                  color: Colors.green,
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.orange.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Total Biaya:',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    'Rp ${formatter.format(record.totalCost)}',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.orange,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (record.notes != null && record.notes!.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(
+                'Catatan: ${record.notes}',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoChip({
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color color,
+  }) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, size: 20, color: color),
+            const SizedBox(height: 4),
+            Text(
+              value,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                color: color,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showAddDialog(BuildContext context) {
+    final dateController = TextEditingController(text: DateFormat('yyyy-MM-dd').format(DateTime.now()));
+    final feedTypeController = TextEditingController();
+    final quantityController = TextEditingController();
+    final costPerKgController = TextEditingController();
+    final notesController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Tambah Pakan'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: dateController,
+                decoration: const InputDecoration(labelText: 'Tanggal (YYYY-MM-DD)'),
+                readOnly: true,
+                onTap: () async {
+                  final date = await showDatePicker(
+                    context: context,
+                    initialDate: DateTime.now(),
+                    firstDate: DateTime(2020),
+                    lastDate: DateTime.now(),
+                  );
+                  if (date != null) {
+                    dateController.text = DateFormat('yyyy-MM-dd').format(date);
+                  }
+                },
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: feedTypeController,
+                decoration: const InputDecoration(labelText: 'Jenis Pakan'),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: quantityController,
+                decoration: const InputDecoration(labelText: 'Jumlah (kg)'),
+                keyboardType: TextInputType.number,
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: costPerKgController,
+                decoration: const InputDecoration(labelText: 'Harga per kg (Rp)'),
+                keyboardType: TextInputType.number,
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: notesController,
+                decoration: const InputDecoration(labelText: 'Catatan'),
+                maxLines: 2,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final quantity = double.parse(quantityController.text);
+              final costPerKg = double.parse(costPerKgController.text);
+
+              final record = FeedRecord(
+                id: 0,
+                userId: 0,
+                date: DateTime.parse(dateController.text),
+                feedType: feedTypeController.text,
+                quantityKg: quantity,
+                costPerKg: costPerKg,
+                totalCost: quantity * costPerKg,
+                notes: notesController.text.isEmpty ? null : notesController.text,
+                createdAt: DateTime.now(),
+              );
+
+              final provider = Provider.of<FeedRecordProvider>(context, listen: false);
+              final success = await provider.createRecord(record);
+
+              if (context.mounted) {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(success ? 'Data berhasil ditambahkan' : 'Gagal menambahkan data'),
+                    backgroundColor: success ? Colors.green : Colors.red,
+                  ),
+                );
+              }
+            },
+            child: const Text('Simpan'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showEditDialog(BuildContext context, FeedRecord record) {
+    final dateController = TextEditingController(text: DateFormat('yyyy-MM-dd').format(record.date));
+    final feedTypeController = TextEditingController(text: record.feedType);
+    final quantityController = TextEditingController(text: record.quantityKg.toString());
+    final costPerKgController = TextEditingController(text: record.costPerKg.toString());
+    final notesController = TextEditingController(text: record.notes ?? '');
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Edit Pakan'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: dateController,
+                decoration: const InputDecoration(labelText: 'Tanggal (YYYY-MM-DD)'),
+                readOnly: true,
+                onTap: () async {
+                  final date = await showDatePicker(
+                    context: context,
+                    initialDate: record.date,
+                    firstDate: DateTime(2020),
+                    lastDate: DateTime.now(),
+                  );
+                  if (date != null) {
+                    dateController.text = DateFormat('yyyy-MM-dd').format(date);
+                  }
+                },
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: feedTypeController,
+                decoration: const InputDecoration(labelText: 'Jenis Pakan'),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: quantityController,
+                decoration: const InputDecoration(labelText: 'Jumlah (kg)'),
+                keyboardType: TextInputType.number,
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: costPerKgController,
+                decoration: const InputDecoration(labelText: 'Harga per kg (Rp)'),
+                keyboardType: TextInputType.number,
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: notesController,
+                decoration: const InputDecoration(labelText: 'Catatan'),
+                maxLines: 2,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final quantity = double.parse(quantityController.text);
+              final costPerKg = double.parse(costPerKgController.text);
+
+              final updatedRecord = FeedRecord(
+                id: record.id,
+                userId: record.userId,
+                date: DateTime.parse(dateController.text),
+                feedType: feedTypeController.text,
+                quantityKg: quantity,
+                costPerKg: costPerKg,
+                totalCost: quantity * costPerKg,
+                notes: notesController.text.isEmpty ? null : notesController.text,
+                createdAt: record.createdAt,
+              );
+
+              final provider = Provider.of<FeedRecordProvider>(context, listen: false);
+              final success = await provider.updateRecord(record.id, updatedRecord);
+
+              if (context.mounted) {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(success ? 'Data berhasil diupdate' : 'Gagal mengupdate data'),
+                    backgroundColor: success ? Colors.green : Colors.red,
+                  ),
+                );
+              }
+            },
+            child: const Text('Simpan'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDeleteDialog(BuildContext context, FeedRecord record, FeedRecordProvider provider) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Hapus Data'),
+        content: const Text('Apakah Anda yakin ingin menghapus data ini?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final success = await provider.deleteRecord(record.id);
+              if (context.mounted) {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(success ? 'Data berhasil dihapus' : 'Gagal menghapus data'),
+                    backgroundColor: success ? Colors.green : Colors.red,
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Hapus', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+}

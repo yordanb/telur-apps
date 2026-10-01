@@ -1,0 +1,102 @@
+from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Enum, Text
+from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
+from app.database import Base
+import enum
+
+
+class UserRole(str, enum.Enum):
+    admin = "admin"
+    pegawai = "pegawai"
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String(50), unique=True, index=True, nullable=False)
+    email = Column(String(100), unique=True, index=True, nullable=False)
+    hashed_password = Column(String(255), nullable=False)
+    full_name = Column(String(100), nullable=False)
+    role = Column(Enum(UserRole), default=UserRole.pegawai)
+    is_active = Column(Integer, default=1)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    # Relationships
+    egg_productions = relationship("EggProduction", back_populates="user")
+    chicken_managements = relationship("ChickenManagement", back_populates="user")
+    feed_records = relationship("FeedRecord", back_populates="user")
+    cost_records = relationship("CostRecord", back_populates="user")
+
+
+class EggProduction(Base):
+    __tablename__ = "egg_productions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    date = Column(DateTime(timezone=True), nullable=False)
+    total_eggs = Column(Integer, nullable=False)
+    good_eggs = Column(Integer, nullable=False)
+    bad_eggs = Column(Integer, default=0)
+    weight_avg = Column(Float, nullable=True)  # in grams
+    notes = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    # Relationships
+    user = relationship("User", back_populates="egg_productions")
+
+
+class ChickenManagement(Base):
+    __tablename__ = "chicken_managements"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    date = Column(DateTime(timezone=True), nullable=False)
+    total_chickens = Column(Integer, nullable=False)
+    healthy_chickens = Column(Integer, nullable=False)
+    sick_chickens = Column(Integer, default=0)
+    dead_chickens = Column(Integer, default=0)
+    new_chickens = Column(Integer, default=0)
+    notes = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    # Relationships
+    user = relationship("User", back_populates="chicken_managements")
+
+
+class FeedRecord(Base):
+    __tablename__ = "feed_records"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    date = Column(DateTime(timezone=True), nullable=False)
+    feed_type = Column(String(100), nullable=False)
+    quantity_kg = Column(Float, nullable=False)
+    cost_per_kg = Column(Float, nullable=False)
+    total_cost = Column(Float, nullable=False)
+    notes = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    # Relationships
+    user = relationship("User", back_populates="feed_records")
+
+
+class CostRecord(Base):
+    __tablename__ = "cost_records"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    date = Column(DateTime(timezone=True), nullable=False)
+    category = Column(String(50), nullable=False)  # pakan, obat, operasional, lainnya
+    description = Column(String(255), nullable=False)
+    amount = Column(Float, nullable=False)
+    notes = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    # Relationships
+    user = relationship("User", back_populates="cost_records")
