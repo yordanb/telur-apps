@@ -1,22 +1,45 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import '../models/user.dart';
 import '../services/api_service.dart';
 
-class AuthProvider with ChangeNotifier {
-  User? _user;
-  bool _isLoading = false;
-  bool _isAuthenticated = false;
-  String? _error;
+// ============== Auth State ==============
+class AuthState {
+  final User? user;
+  final bool isLoading;
+  final bool isAuthenticated;
+  final String? error;
 
-  User? get user => _user;
-  bool get isLoading => _isLoading;
-  bool get isAuthenticated => _isAuthenticated;
-  String? get error => _error;
+  const AuthState({
+    this.user,
+    this.isLoading = false,
+    this.isAuthenticated = false,
+    this.error,
+  });
 
-  AuthProvider() {
-    checkAuth();
+  AuthState copyWith({
+    User? user,
+    bool? isLoading,
+    bool? isAuthenticated,
+    String? error,
+    bool clearError = false,
+  }) {
+    return AuthState(
+      user: user ?? this.user,
+      isLoading: isLoading ?? this.isLoading,
+      isAuthenticated: isAuthenticated ?? this.isAuthenticated,
+      error: clearError ? null : (error ?? this.error),
+    );
+  }
+}
+
+// ============== Auth Notifier ==============
+class AuthNotifier extends Notifier<AuthState> {
+  @override
+  AuthState build() {
+    Future.microtask(() => checkAuth());
+    return const AuthState();
   }
 
   Future<void> checkAuth() async {
@@ -25,25 +48,21 @@ class AuthProvider with ChangeNotifier {
       try {
         final response = await ApiService.get('/auth/me');
         if (response.statusCode == 200) {
-          _user = User.fromJson(jsonDecode(response.body));
-          _isAuthenticated = true;
-          _error = null;
+          state = AuthState(
+            user: User.fromJson(jsonDecode(response.body)),
+            isAuthenticated: true,
+          );
         } else {
           await logout();
-          _error = 'Session expired. Please login again.';
         }
       } catch (e) {
         await logout();
-        _error = 'Network error. Please check your connection.';
       }
     }
-    notifyListeners();
   }
 
   Future<bool> login(String username, String password) async {
-    _isLoading = true;
-    _error = null;
-    notifyListeners();
+    state = state.copyWith(isLoading: true, clearError: true);
 
     try {
       final response = await http.post(
@@ -51,58 +70,56 @@ class AuthProvider with ChangeNotifier {
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
         body: 'username=$username&password=$password',
       );
-      print('Login response: ${response.statusCode} - ${response.body}');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         await ApiService.saveToken(data['access_token']);
 
         final userResponse = await ApiService.get('/auth/me');
-        print('Auth/me response: ${userResponse.statusCode} - ${userResponse.body}');
-        
         if (userResponse.statusCode == 200) {
-          _user = User.fromJson(jsonDecode(userResponse.body));
-          _isAuthenticated = true;
-          _isLoading = false;
-          _error = null;
-          notifyListeners();
+          state = AuthState(
+            user: User.fromJson(jsonDecode(userResponse.body)),
+            isAuthenticated: true,
+          );
           return true;
         } else {
-          _isLoading = false;
-          _error = 'Gagal mengambil data user (HTTP ${userResponse.statusCode})';
-          notifyListeners();
+          state = state.copyWith(
+            isLoading: false,
+            error: 'Gagal mengambil data user',
+          );
           return false;
         }
       } else if (response.statusCode == 401) {
-        _isLoading = false;
-        _error = 'Username atau password salah';
-        notifyListeners();
+        state = state.copyWith(
+          isLoading: false,
+          error: 'Username atau password salah',
+        );
         return false;
       } else {
-        _isLoading = false;
-        _error = 'Login failed. Please try again.';
-        notifyListeners();
+        state = state.copyWith(
+          isLoading: false,
+          error: 'Login gagal. Coba lagi.',
+        );
         return false;
       }
     } catch (e) {
-      print('Login exception: $e');
-      _isLoading = false;
-      _error = 'Network error: ${e.toString()}';
-      notifyListeners();
+      state = state.copyWith(
+        isLoading: false,
+        error: 'Network error: ${e.toString()}',
+      );
       return false;
     }
   }
 
   Future<void> logout() async {
     await ApiService.removeToken();
-    _user = null;
-    _isAuthenticated = false;
-    _error = null;
-    notifyListeners();
+    state = const AuthState();
   }
 
   void clearError() {
-    _error = null;
-    notifyListeners();
+    state = state.copyWith(clearError: true);
   }
 }
+
+final authProvider =
+    NotifierProvider<AuthNotifier, AuthState>(AuthNotifier.new);

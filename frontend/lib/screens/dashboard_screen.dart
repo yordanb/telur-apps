@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/auth_provider.dart';
 import '../providers/egg_production_provider.dart';
 import '../providers/chicken_management_provider.dart';
@@ -12,47 +12,39 @@ import 'cost_record_screen.dart';
 import 'statistics_screen.dart';
 import 'user_management_screen.dart';
 
-class DashboardScreen extends StatefulWidget {
+class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
 
   @override
-  State<DashboardScreen> createState() => _DashboardScreenState();
+  ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
 }
 
-class _DashboardScreenState extends State<DashboardScreen> {
+class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   int _selectedIndex = 0;
 
   @override
   void initState() {
     super.initState();
-    // Defer data loading to after first build to avoid
-    // "setState() called during build" errors
+    // Defer to after first build
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadData();
     });
   }
 
-  Future<void> _loadData() async {
-    final eggProvider = Provider.of<EggProductionProvider>(context, listen: false);
-    final chickenProvider = Provider.of<ChickenManagementProvider>(context, listen: false);
-    final feedProvider = Provider.of<FeedRecordProvider>(context, listen: false);
-    final costProvider = Provider.of<CostRecordProvider>(context, listen: false);
-
-    await Future.wait([
-      eggProvider.fetchProductions(),
-      chickenProvider.fetchManagements(),
-      feedProvider.fetchRecords(),
-      costProvider.fetchRecords(),
-    ]);
+  void _loadData() {
+    ref.read(eggProductionProvider.notifier).fetchProductions();
+    ref.read(chickenManagementProvider.notifier).fetchManagements();
+    ref.read(feedRecordProvider.notifier).fetchRecords();
+    ref.read(costRecordProvider.notifier).fetchRecords();
   }
 
   @override
   Widget build(BuildContext context) {
-    final auth = Provider.of<AuthProvider>(context);
+    final auth = ref.watch(authProvider);
     final user = auth.user;
 
-    final List<Widget> screens = [
-      _buildHomeScreen(),
+    final screens = [
+      _buildHomeScreen(auth),
       const EggProductionScreen(),
       const ChickenManagementScreen(),
       const FeedRecordScreen(),
@@ -60,12 +52,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
       const StatisticsScreen(),
     ];
 
-    // Add user management screen for admin
     if (user?.isAdmin == true) {
       screens.add(const UserManagementScreen());
     }
 
-    final List<BottomNavigationBarItem> navItems = [
+    final navItems = [
       const BottomNavigationBarItem(
         icon: Icon(Icons.home),
         label: 'Beranda',
@@ -114,8 +105,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildHomeScreen() {
-    final auth = Provider.of<AuthProvider>(context);
+  Widget _buildHomeScreen(AuthState auth) {
     final user = auth.user;
 
     return Scaffold(
@@ -125,15 +115,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () async {
-              // Just logout - the Consumer in main.dart will
-              // automatically switch back to LoginScreen
-              await auth.logout();
+              // Just logout - GoRouter redirect will switch to LoginScreen
+              await ref.read(authProvider.notifier).logout();
             },
           ),
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: _loadData,
+        onRefresh: () async => _loadData(),
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(16),
@@ -164,9 +153,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             ),
                             Text(
                               user?.fullName ?? 'User',
-                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleLarge
+                                  ?.copyWith(fontWeight: FontWeight.bold),
                             ),
                             Container(
                               padding: const EdgeInsets.symmetric(
@@ -201,63 +191,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
               // Quick Stats
               Text(
                 'Ringkasan Hari Ini',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: Theme.of(context)
+                    .textTheme
+                    .titleMedium
+                    ?.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 12),
-              Consumer<EggProductionProvider>(
-                builder: (context, eggProvider, _) {
-                  final today = DateTime.now();
-                  final todayProductions = eggProvider.productions.where((p) {
-                    return p.date.year == today.year &&
-                        p.date.month == today.month &&
-                        p.date.day == today.day;
-                  }).toList();
-
-                  final totalEggs = todayProductions.fold<int>(
-                    0,
-                    (sum, p) => sum + p.totalEggs,
-                  );
-
-                  return _buildStatCard(
-                    icon: Icons.egg,
-                    title: 'Total Telur Hari Ini',
-                    value: totalEggs.toString(),
-                    color: Colors.orange,
-                  );
-                },
-              ),
+              _buildEggStatCard(),
               const SizedBox(height: 12),
-              Consumer<ChickenManagementProvider>(
-                builder: (context, chickenProvider, _) {
-                  final today = DateTime.now();
-                  final todayManagement = chickenProvider.managements.where((m) {
-                    return m.date.year == today.year &&
-                        m.date.month == today.month &&
-                        m.date.day == today.day;
-                  }).toList();
-
-                  final totalChickens = todayManagement.isNotEmpty
-                      ? todayManagement.first.totalChickens
-                      : 0;
-
-                  return _buildStatCard(
-                    icon: Icons.pets,
-                    title: 'Total Ayam',
-                    value: totalChickens.toString(),
-                    color: Colors.green,
-                  );
-                },
-              ),
+              _buildChickenStatCard(),
               const SizedBox(height: 24),
 
               // Quick Actions
               Text(
                 'Aksi Cepat',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: Theme.of(context)
+                    .textTheme
+                    .titleMedium
+                    ?.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 12),
               GridView.count(
@@ -271,41 +222,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     icon: Icons.add,
                     title: 'Catat Produksi',
                     color: Colors.orange,
-                    onTap: () {
-                      setState(() {
-                        _selectedIndex = 1;
-                      });
-                    },
+                    onTap: () => setState(() => _selectedIndex = 1),
                   ),
                   _buildQuickAction(
                     icon: Icons.pets,
                     title: 'Kelola Ayam',
                     color: Colors.green,
-                    onTap: () {
-                      setState(() {
-                        _selectedIndex = 2;
-                      });
-                    },
+                    onTap: () => setState(() => _selectedIndex = 2),
                   ),
                   _buildQuickAction(
                     icon: Icons.grain,
                     title: 'Catat Pakan',
                     color: Colors.brown,
-                    onTap: () {
-                      setState(() {
-                        _selectedIndex = 3;
-                      });
-                    },
+                    onTap: () => setState(() => _selectedIndex = 3),
                   ),
                   _buildQuickAction(
                     icon: Icons.attach_money,
                     title: 'Catat Biaya',
                     color: Colors.red,
-                    onTap: () {
-                      setState(() {
-                        _selectedIndex = 4;
-                      });
-                    },
+                    onTap: () => setState(() => _selectedIndex = 4),
                   ),
                 ],
               ),
@@ -313,6 +248,44 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildEggStatCard() {
+    final eggState = ref.watch(eggProductionProvider);
+    final today = DateTime.now();
+    final todayProductions = eggState.productions.where((p) {
+      return p.date.year == today.year &&
+          p.date.month == today.month &&
+          p.date.day == today.day;
+    }).toList();
+    final totalEggs =
+        todayProductions.fold<int>(0, (sum, p) => sum + p.totalEggs);
+
+    return _buildStatCard(
+      icon: Icons.egg,
+      title: 'Total Telur Hari Ini',
+      value: totalEggs.toString(),
+      color: Colors.orange,
+    );
+  }
+
+  Widget _buildChickenStatCard() {
+    final chickenState = ref.watch(chickenManagementProvider);
+    final today = DateTime.now();
+    final todayManagement = chickenState.managements.where((m) {
+      return m.date.year == today.year &&
+          m.date.month == today.month &&
+          m.date.day == today.day;
+    }).toList();
+    final totalChickens =
+        todayManagement.isNotEmpty ? todayManagement.first.totalChickens : 0;
+
+    return _buildStatCard(
+      icon: Icons.pets,
+      title: 'Total Ayam',
+      value: totalChickens.toString(),
+      color: Colors.green,
     );
   }
 
@@ -342,15 +315,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 children: [
                   Text(
                     title,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.grey[600],
-                    ),
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyMedium
+                        ?.copyWith(color: Colors.grey[600]),
                   ),
                   Text(
                     value,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: Theme.of(context)
+                        .textTheme
+                        .headlineSmall
+                        ?.copyWith(fontWeight: FontWeight.bold),
                   ),
                 ],
               ),
@@ -381,9 +356,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Text(
                 title,
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w500,
-                ),
+                style: Theme.of(context)
+                    .textTheme
+                    .bodyMedium
+                    ?.copyWith(fontWeight: FontWeight.w500),
               ),
             ],
           ),

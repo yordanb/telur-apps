@@ -1,46 +1,74 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/feed_record.dart';
 import '../services/api_service.dart';
 import '../services/local_storage_service.dart';
 
-class FeedRecordProvider with ChangeNotifier {
-  List<FeedRecord> _records = [];
-  bool _isLoading = false;
-  String? _error;
+// ============== State ==============
+class FeedRecordState {
+  final List<FeedRecord> records;
+  final bool isLoading;
+  final String? error;
 
-  List<FeedRecord> get records => _records;
-  bool get isLoading => _isLoading;
-  String? get error => _error;
+  const FeedRecordState({
+    this.records = const [],
+    this.isLoading = false,
+    this.error,
+  });
+
+  FeedRecordState copyWith({
+    List<FeedRecord>? records,
+    bool? isLoading,
+    String? error,
+    bool clearError = false,
+  }) {
+    return FeedRecordState(
+      records: records ?? this.records,
+      isLoading: isLoading ?? this.isLoading,
+      error: clearError ? null : (error ?? this.error),
+    );
+  }
+}
+
+// ============== Notifier ==============
+class FeedRecordNotifier extends Notifier<FeedRecordState> {
+  @override
+  FeedRecordState build() {
+    Future.microtask(() => fetchRecords());
+    return const FeedRecordState();
+  }
 
   Future<void> fetchRecords() async {
-    _isLoading = true;
-    _error = null;
-    notifyListeners();
+    state = state.copyWith(isLoading: true, clearError: true);
 
     try {
       final response = await ApiService.get('/feed-records/');
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
-        _records = data.map((json) => FeedRecord.fromJson(json)).toList();
+        state = FeedRecordState(
+          records: data.map((json) => FeedRecord.fromJson(json)).toList(),
+        );
       }
     } catch (e) {
-      _error = e.toString();
-      final offlineData = await LocalStorageService.getOfflineFeedRecords();
-      _records = offlineData.map((json) => FeedRecord.fromJson(json)).toList();
+      final offlineData =
+          await LocalStorageService.getOfflineFeedRecords();
+      state = FeedRecordState(
+        error: e.toString(),
+        records:
+            offlineData.map((json) => FeedRecord.fromJson(json)).toList(),
+      );
     }
-
-    _isLoading = false;
-    notifyListeners();
   }
 
   Future<bool> createRecord(FeedRecord record) async {
     try {
-      final response = await ApiService.post('/feed-records/', record.toJson());
+      final response =
+          await ApiService.post('/feed-records/', record.toJson());
       if (response.statusCode == 200 || response.statusCode == 201) {
         final newRecord = FeedRecord.fromJson(jsonDecode(response.body));
-        _records.insert(0, newRecord);
-        notifyListeners();
+        state = state.copyWith(
+          records: [newRecord, ...state.records],
+        );
         return true;
       }
       return false;
@@ -52,14 +80,14 @@ class FeedRecordProvider with ChangeNotifier {
 
   Future<bool> updateRecord(int id, FeedRecord record) async {
     try {
-      final response = await ApiService.put('/feed-records/$id', record.toJson());
+      final response =
+          await ApiService.put('/feed-records/$id', record.toJson());
       if (response.statusCode == 200) {
-        final updatedRecord = FeedRecord.fromJson(jsonDecode(response.body));
-        final index = _records.indexWhere((r) => r.id == id);
-        if (index != -1) {
-          _records[index] = updatedRecord;
-          notifyListeners();
-        }
+        final updated = FeedRecord.fromJson(jsonDecode(response.body));
+        final list = List<FeedRecord>.from(state.records);
+        final index = list.indexWhere((r) => r.id == id);
+        if (index != -1) list[index] = updated;
+        state = state.copyWith(records: list);
         return true;
       }
       return false;
@@ -72,8 +100,9 @@ class FeedRecordProvider with ChangeNotifier {
     try {
       final response = await ApiService.delete('/feed-records/$id');
       if (response.statusCode == 200) {
-        _records.removeWhere((r) => r.id == id);
-        notifyListeners();
+        state = state.copyWith(
+          records: state.records.where((r) => r.id != id).toList(),
+        );
         return true;
       }
       return false;
@@ -82,3 +111,7 @@ class FeedRecordProvider with ChangeNotifier {
     }
   }
 }
+
+final feedRecordProvider =
+    NotifierProvider<FeedRecordNotifier, FeedRecordState>(
+        FeedRecordNotifier.new);

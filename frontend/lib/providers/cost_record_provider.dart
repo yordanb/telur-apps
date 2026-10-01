@@ -1,46 +1,74 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/cost_record.dart';
 import '../services/api_service.dart';
 import '../services/local_storage_service.dart';
 
-class CostRecordProvider with ChangeNotifier {
-  List<CostRecord> _records = [];
-  bool _isLoading = false;
-  String? _error;
+// ============== State ==============
+class CostRecordState {
+  final List<CostRecord> records;
+  final bool isLoading;
+  final String? error;
 
-  List<CostRecord> get records => _records;
-  bool get isLoading => _isLoading;
-  String? get error => _error;
+  const CostRecordState({
+    this.records = const [],
+    this.isLoading = false,
+    this.error,
+  });
+
+  CostRecordState copyWith({
+    List<CostRecord>? records,
+    bool? isLoading,
+    String? error,
+    bool clearError = false,
+  }) {
+    return CostRecordState(
+      records: records ?? this.records,
+      isLoading: isLoading ?? this.isLoading,
+      error: clearError ? null : (error ?? this.error),
+    );
+  }
+}
+
+// ============== Notifier ==============
+class CostRecordNotifier extends Notifier<CostRecordState> {
+  @override
+  CostRecordState build() {
+    Future.microtask(() => fetchRecords());
+    return const CostRecordState();
+  }
 
   Future<void> fetchRecords() async {
-    _isLoading = true;
-    _error = null;
-    notifyListeners();
+    state = state.copyWith(isLoading: true, clearError: true);
 
     try {
       final response = await ApiService.get('/cost-records/');
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
-        _records = data.map((json) => CostRecord.fromJson(json)).toList();
+        state = CostRecordState(
+          records: data.map((json) => CostRecord.fromJson(json)).toList(),
+        );
       }
     } catch (e) {
-      _error = e.toString();
-      final offlineData = await LocalStorageService.getOfflineCostRecords();
-      _records = offlineData.map((json) => CostRecord.fromJson(json)).toList();
+      final offlineData =
+          await LocalStorageService.getOfflineCostRecords();
+      state = CostRecordState(
+        error: e.toString(),
+        records:
+            offlineData.map((json) => CostRecord.fromJson(json)).toList(),
+      );
     }
-
-    _isLoading = false;
-    notifyListeners();
   }
 
   Future<bool> createRecord(CostRecord record) async {
     try {
-      final response = await ApiService.post('/cost-records/', record.toJson());
+      final response =
+          await ApiService.post('/cost-records/', record.toJson());
       if (response.statusCode == 200 || response.statusCode == 201) {
         final newRecord = CostRecord.fromJson(jsonDecode(response.body));
-        _records.insert(0, newRecord);
-        notifyListeners();
+        state = state.copyWith(
+          records: [newRecord, ...state.records],
+        );
         return true;
       }
       return false;
@@ -52,14 +80,14 @@ class CostRecordProvider with ChangeNotifier {
 
   Future<bool> updateRecord(int id, CostRecord record) async {
     try {
-      final response = await ApiService.put('/cost-records/$id', record.toJson());
+      final response =
+          await ApiService.put('/cost-records/$id', record.toJson());
       if (response.statusCode == 200) {
-        final updatedRecord = CostRecord.fromJson(jsonDecode(response.body));
-        final index = _records.indexWhere((r) => r.id == id);
-        if (index != -1) {
-          _records[index] = updatedRecord;
-          notifyListeners();
-        }
+        final updated = CostRecord.fromJson(jsonDecode(response.body));
+        final list = List<CostRecord>.from(state.records);
+        final index = list.indexWhere((r) => r.id == id);
+        if (index != -1) list[index] = updated;
+        state = state.copyWith(records: list);
         return true;
       }
       return false;
@@ -72,8 +100,9 @@ class CostRecordProvider with ChangeNotifier {
     try {
       final response = await ApiService.delete('/cost-records/$id');
       if (response.statusCode == 200) {
-        _records.removeWhere((r) => r.id == id);
-        notifyListeners();
+        state = state.copyWith(
+          records: state.records.where((r) => r.id != id).toList(),
+        );
         return true;
       }
       return false;
@@ -82,3 +111,7 @@ class CostRecordProvider with ChangeNotifier {
     }
   }
 }
+
+final costRecordProvider =
+    NotifierProvider<CostRecordNotifier, CostRecordState>(
+        CostRecordNotifier.new);

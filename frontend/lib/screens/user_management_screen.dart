@@ -1,18 +1,17 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../providers/auth_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/api_service.dart';
 import '../models/user.dart';
 
-class UserManagementScreen extends StatefulWidget {
+class UserManagementScreen extends ConsumerStatefulWidget {
   const UserManagementScreen({super.key});
 
   @override
-  State<UserManagementScreen> createState() => _UserManagementScreenState();
+  ConsumerState<UserManagementScreen> createState() => _UserManagementScreenState();
 }
 
-class _UserManagementScreenState extends State<UserManagementScreen> {
+class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
   List<User> _users = [];
   bool _isLoading = false;
 
@@ -37,9 +36,11 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
       // Handle error
     }
 
-    setState(() {
-      _isLoading = false;
-    });
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   @override
@@ -108,8 +109,8 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
 
     showDialog(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => AlertDialog(
           title: const Text('Tambah User'),
           content: SingleChildScrollView(
             child: Column(
@@ -154,7 +155,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.pop(dialogContext),
               child: const Text('Batal'),
             ),
             ElevatedButton(
@@ -170,7 +171,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                 try {
                   final response = await ApiService.post('/users/', userData);
                   if (response.statusCode == 200 || response.statusCode == 201) {
-                    Navigator.pop(context);
+                    Navigator.pop(dialogContext);
                     _fetchUsers();
                     if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(

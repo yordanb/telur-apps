@@ -1,65 +1,99 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/chicken_management.dart';
 import '../services/api_service.dart';
 import '../services/local_storage_service.dart';
 
-class ChickenManagementProvider with ChangeNotifier {
-  List<ChickenManagement> _managements = [];
-  bool _isLoading = false;
-  String? _error;
+// ============== State ==============
+class ChickenManagementState {
+  final List<ChickenManagement> managements;
+  final bool isLoading;
+  final String? error;
 
-  List<ChickenManagement> get managements => _managements;
-  bool get isLoading => _isLoading;
-  String? get error => _error;
+  const ChickenManagementState({
+    this.managements = const [],
+    this.isLoading = false,
+    this.error,
+  });
+
+  ChickenManagementState copyWith({
+    List<ChickenManagement>? managements,
+    bool? isLoading,
+    String? error,
+    bool clearError = false,
+  }) {
+    return ChickenManagementState(
+      managements: managements ?? this.managements,
+      isLoading: isLoading ?? this.isLoading,
+      error: clearError ? null : (error ?? this.error),
+    );
+  }
+}
+
+// ============== Notifier ==============
+class ChickenManagementNotifier extends Notifier<ChickenManagementState> {
+  @override
+  ChickenManagementState build() {
+    Future.microtask(() => fetchManagements());
+    return const ChickenManagementState();
+  }
 
   Future<void> fetchManagements() async {
-    _isLoading = true;
-    _error = null;
-    notifyListeners();
+    state = state.copyWith(isLoading: true, clearError: true);
 
     try {
       final response = await ApiService.get('/chicken-managements/');
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
-        _managements = data.map((json) => ChickenManagement.fromJson(json)).toList();
+        state = ChickenManagementState(
+          managements:
+              data.map((json) => ChickenManagement.fromJson(json)).toList(),
+        );
       }
     } catch (e) {
-      _error = e.toString();
-      final offlineData = await LocalStorageService.getOfflineChickenManagements();
-      _managements = offlineData.map((json) => ChickenManagement.fromJson(json)).toList();
+      final offlineData =
+          await LocalStorageService.getOfflineChickenManagements();
+      state = ChickenManagementState(
+        error: e.toString(),
+        managements: offlineData
+            .map((json) => ChickenManagement.fromJson(json))
+            .toList(),
+      );
     }
-
-    _isLoading = false;
-    notifyListeners();
   }
 
   Future<bool> createManagement(ChickenManagement management) async {
     try {
-      final response = await ApiService.post('/chicken-managements/', management.toJson());
+      final response = await ApiService.post(
+          '/chicken-managements/', management.toJson());
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final newManagement = ChickenManagement.fromJson(jsonDecode(response.body));
-        _managements.insert(0, newManagement);
-        notifyListeners();
+        final newManagement =
+            ChickenManagement.fromJson(jsonDecode(response.body));
+        state = state.copyWith(
+          managements: [newManagement, ...state.managements],
+        );
         return true;
       }
       return false;
     } catch (e) {
-      await LocalStorageService.saveOfflineChickenManagement(management.toJson());
+      await LocalStorageService.saveOfflineChickenManagement(
+          management.toJson());
       return false;
     }
   }
 
-  Future<bool> updateManagement(int id, ChickenManagement management) async {
+  Future<bool> updateManagement(
+      int id, ChickenManagement management) async {
     try {
-      final response = await ApiService.put('/chicken-managements/$id', management.toJson());
+      final response = await ApiService.put(
+          '/chicken-managements/$id', management.toJson());
       if (response.statusCode == 200) {
-        final updatedManagement = ChickenManagement.fromJson(jsonDecode(response.body));
-        final index = _managements.indexWhere((m) => m.id == id);
-        if (index != -1) {
-          _managements[index] = updatedManagement;
-          notifyListeners();
-        }
+        final updated =
+            ChickenManagement.fromJson(jsonDecode(response.body));
+        final list = List<ChickenManagement>.from(state.managements);
+        final index = list.indexWhere((m) => m.id == id);
+        if (index != -1) list[index] = updated;
+        state = state.copyWith(managements: list);
         return true;
       }
       return false;
@@ -70,10 +104,13 @@ class ChickenManagementProvider with ChangeNotifier {
 
   Future<bool> deleteManagement(int id) async {
     try {
-      final response = await ApiService.delete('/chicken-managements/$id');
+      final response =
+          await ApiService.delete('/chicken-managements/$id');
       if (response.statusCode == 200) {
-        _managements.removeWhere((m) => m.id == id);
-        notifyListeners();
+        state = state.copyWith(
+          managements:
+              state.managements.where((m) => m.id != id).toList(),
+        );
         return true;
       }
       return false;
@@ -82,3 +119,7 @@ class ChickenManagementProvider with ChangeNotifier {
     }
   }
 }
+
+final chickenManagementProvider =
+    NotifierProvider<ChickenManagementNotifier, ChickenManagementState>(
+        ChickenManagementNotifier.new);

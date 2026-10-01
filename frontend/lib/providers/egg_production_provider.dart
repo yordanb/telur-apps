@@ -1,67 +1,98 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/egg_production.dart';
 import '../services/api_service.dart';
 import '../services/local_storage_service.dart';
 
-class EggProductionProvider with ChangeNotifier {
-  List<EggProduction> _productions = [];
-  bool _isLoading = false;
-  String? _error;
+// ============== State ==============
+class EggProductionState {
+  final List<EggProduction> productions;
+  final bool isLoading;
+  final String? error;
 
-  List<EggProduction> get productions => _productions;
-  bool get isLoading => _isLoading;
-  String? get error => _error;
+  const EggProductionState({
+    this.productions = const [],
+    this.isLoading = false,
+    this.error,
+  });
+
+  EggProductionState copyWith({
+    List<EggProduction>? productions,
+    bool? isLoading,
+    String? error,
+    bool clearError = false,
+  }) {
+    return EggProductionState(
+      productions: productions ?? this.productions,
+      isLoading: isLoading ?? this.isLoading,
+      error: clearError ? null : (error ?? this.error),
+    );
+  }
+}
+
+// ============== Notifier ==============
+class EggProductionNotifier extends Notifier<EggProductionState> {
+  @override
+  EggProductionState build() {
+    Future.microtask(() => fetchProductions());
+    return const EggProductionState();
+  }
 
   Future<void> fetchProductions() async {
-    _isLoading = true;
-    _error = null;
-    notifyListeners();
+    state = state.copyWith(isLoading: true, clearError: true);
 
     try {
       final response = await ApiService.get('/egg-productions/');
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
-        _productions = data.map((json) => EggProduction.fromJson(json)).toList();
+        state = EggProductionState(
+          productions:
+              data.map((json) => EggProduction.fromJson(json)).toList(),
+        );
       }
     } catch (e) {
-      _error = e.toString();
-      // Load from local storage if offline
-      final offlineData = await LocalStorageService.getOfflineEggProductions();
-      _productions = offlineData.map((json) => EggProduction.fromJson(json)).toList();
+      final offlineData =
+          await LocalStorageService.getOfflineEggProductions();
+      state = EggProductionState(
+        error: e.toString(),
+        productions:
+            offlineData.map((json) => EggProduction.fromJson(json)).toList(),
+      );
     }
-
-    _isLoading = false;
-    notifyListeners();
   }
 
   Future<bool> createProduction(EggProduction production) async {
     try {
-      final response = await ApiService.post('/egg-productions/', production.toJson());
+      final response =
+          await ApiService.post('/egg-productions/', production.toJson());
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final newProduction = EggProduction.fromJson(jsonDecode(response.body));
-        _productions.insert(0, newProduction);
-        notifyListeners();
+        final newProduction =
+            EggProduction.fromJson(jsonDecode(response.body));
+        state = state.copyWith(
+          productions: [newProduction, ...state.productions],
+        );
         return true;
       }
       return false;
     } catch (e) {
-      // Save to local storage if offline
-      await LocalStorageService.saveOfflineEggProduction(production.toJson());
+      await LocalStorageService.saveOfflineEggProduction(
+          production.toJson());
       return false;
     }
   }
 
-  Future<bool> updateProduction(int id, EggProduction production) async {
+  Future<bool> updateProduction(
+      int id, EggProduction production) async {
     try {
-      final response = await ApiService.put('/egg-productions/$id', production.toJson());
+      final response =
+          await ApiService.put('/egg-productions/$id', production.toJson());
       if (response.statusCode == 200) {
-        final updatedProduction = EggProduction.fromJson(jsonDecode(response.body));
-        final index = _productions.indexWhere((p) => p.id == id);
-        if (index != -1) {
-          _productions[index] = updatedProduction;
-          notifyListeners();
-        }
+        final updated =
+            EggProduction.fromJson(jsonDecode(response.body));
+        final productions = List<EggProduction>.from(state.productions);
+        final index = productions.indexWhere((p) => p.id == id);
+        if (index != -1) productions[index] = updated;
+        state = state.copyWith(productions: productions);
         return true;
       }
       return false;
@@ -74,8 +105,10 @@ class EggProductionProvider with ChangeNotifier {
     try {
       final response = await ApiService.delete('/egg-productions/$id');
       if (response.statusCode == 200) {
-        _productions.removeWhere((p) => p.id == id);
-        notifyListeners();
+        state = state.copyWith(
+          productions:
+              state.productions.where((p) => p.id != id).toList(),
+        );
         return true;
       }
       return false;
@@ -84,3 +117,7 @@ class EggProductionProvider with ChangeNotifier {
     }
   }
 }
+
+final eggProductionProvider =
+    NotifierProvider<EggProductionNotifier, EggProductionState>(
+        EggProductionNotifier.new);

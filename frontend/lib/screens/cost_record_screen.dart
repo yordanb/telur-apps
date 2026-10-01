@@ -1,89 +1,78 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../providers/cost_record_provider.dart';
 import '../models/cost_record.dart';
 
-class CostRecordScreen extends StatefulWidget {
+class CostRecordScreen extends ConsumerWidget {
   const CostRecordScreen({super.key});
 
   @override
-  State<CostRecordScreen> createState() => _CostRecordScreenState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(costRecordProvider);
 
-class _CostRecordScreenState extends State<CostRecordScreen> {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<CostRecordProvider>(context, listen: false).fetchRecords();
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Pencatatan Biaya'),
       ),
-      body: Consumer<CostRecordProvider>(
-        builder: (context, provider, _) {
-          if (provider.isLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (provider.error != null) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
-                  const SizedBox(height: 16),
-                  Text(provider.error!),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () => provider.fetchRecords(),
-                    child: const Text('Coba Lagi'),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          if (provider.records.isEmpty) {
-            return const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.attach_money, size: 48, color: Colors.grey),
-                  SizedBox(height: 16),
-                  Text('Belum ada data biaya'),
-                ],
-              ),
-            );
-          }
-
-          return RefreshIndicator(
-            onRefresh: () => provider.fetchRecords(),
-            child: ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: provider.records.length,
-              itemBuilder: (context, index) {
-                final record = provider.records[index];
-                return _buildRecordCard(record, provider);
-              },
-            ),
-          );
-        },
-      ),
+      body: _buildBody(context, ref, state),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddDialog(context),
+        onPressed: () => _showAddDialog(context, ref),
         child: const Icon(Icons.add),
       ),
     );
   }
 
-  Widget _buildRecordCard(CostRecord record, CostRecordProvider provider) {
+  Widget _buildBody(BuildContext context, WidgetRef ref, CostRecordState state) {
+    if (state.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (state.error != null && state.records.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error_outline, size: 48, color: Colors.red),
+            const SizedBox(height: 16),
+            Text(state.error!),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () => ref.read(costRecordProvider.notifier).fetchRecords(),
+              child: const Text('Coba Lagi'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (state.records.isEmpty) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.attach_money, size: 48, color: Colors.grey),
+            SizedBox(height: 16),
+            Text('Belum ada data biaya'),
+          ],
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: () => ref.read(costRecordProvider.notifier).fetchRecords(),
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: state.records.length,
+        itemBuilder: (context, index) {
+          final record = state.records[index];
+          return _buildRecordCard(context, ref, record);
+        },
+      ),
+    );
+  }
+
+  Widget _buildRecordCard(BuildContext context, WidgetRef ref, CostRecord record) {
     final formatter = NumberFormat('#,###', 'id_ID');
 
     return Card(
@@ -127,9 +116,9 @@ class _CostRecordScreenState extends State<CostRecordScreen> {
                   ],
                   onSelected: (value) {
                     if (value == 'edit') {
-                      _showEditDialog(context, record);
+                      _showEditDialog(context, ref, record);
                     } else if (value == 'delete') {
-                      _showDeleteDialog(context, record, provider);
+                      _showDeleteDialog(context, ref, record);
                     }
                   },
                 ),
@@ -222,7 +211,7 @@ class _CostRecordScreenState extends State<CostRecordScreen> {
     );
   }
 
-  void _showAddDialog(BuildContext context) {
+  void _showAddDialog(BuildContext context, WidgetRef ref) {
     final dateController = TextEditingController(text: DateFormat('yyyy-MM-dd').format(DateTime.now()));
     String selectedCategory = 'pakan';
     final descriptionController = TextEditingController();
@@ -231,8 +220,8 @@ class _CostRecordScreenState extends State<CostRecordScreen> {
 
     showDialog(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => AlertDialog(
           title: const Text('Tambah Biaya'),
           content: SingleChildScrollView(
             child: Column(
@@ -244,7 +233,7 @@ class _CostRecordScreenState extends State<CostRecordScreen> {
                   readOnly: true,
                   onTap: () async {
                     final date = await showDatePicker(
-                      context: context,
+                      context: dialogContext,
                       initialDate: DateTime.now(),
                       firstDate: DateTime(2020),
                       lastDate: DateTime.now(),
@@ -292,7 +281,7 @@ class _CostRecordScreenState extends State<CostRecordScreen> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.pop(dialogContext),
               child: const Text('Batal'),
             ),
             ElevatedButton(
@@ -308,11 +297,10 @@ class _CostRecordScreenState extends State<CostRecordScreen> {
                   createdAt: DateTime.now(),
                 );
 
-                final provider = Provider.of<CostRecordProvider>(context, listen: false);
-                final success = await provider.createRecord(record);
+                final success = await ref.read(costRecordProvider.notifier).createRecord(record);
 
-                if (context.mounted) {
-                  Navigator.pop(context);
+                if (dialogContext.mounted) {
+                  Navigator.pop(dialogContext);
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(success ? 'Data berhasil ditambahkan' : 'Gagal menambahkan data'),
@@ -329,7 +317,7 @@ class _CostRecordScreenState extends State<CostRecordScreen> {
     );
   }
 
-  void _showEditDialog(BuildContext context, CostRecord record) {
+  void _showEditDialog(BuildContext context, WidgetRef ref, CostRecord record) {
     final dateController = TextEditingController(text: DateFormat('yyyy-MM-dd').format(record.date));
     String selectedCategory = record.category;
     final descriptionController = TextEditingController(text: record.description);
@@ -338,8 +326,8 @@ class _CostRecordScreenState extends State<CostRecordScreen> {
 
     showDialog(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => AlertDialog(
           title: const Text('Edit Biaya'),
           content: SingleChildScrollView(
             child: Column(
@@ -351,7 +339,7 @@ class _CostRecordScreenState extends State<CostRecordScreen> {
                   readOnly: true,
                   onTap: () async {
                     final date = await showDatePicker(
-                      context: context,
+                      context: dialogContext,
                       initialDate: record.date,
                       firstDate: DateTime(2020),
                       lastDate: DateTime.now(),
@@ -399,7 +387,7 @@ class _CostRecordScreenState extends State<CostRecordScreen> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.pop(dialogContext),
               child: const Text('Batal'),
             ),
             ElevatedButton(
@@ -415,11 +403,10 @@ class _CostRecordScreenState extends State<CostRecordScreen> {
                   createdAt: record.createdAt,
                 );
 
-                final provider = Provider.of<CostRecordProvider>(context, listen: false);
-                final success = await provider.updateRecord(record.id, updatedRecord);
+                final success = await ref.read(costRecordProvider.notifier).updateRecord(record.id, updatedRecord);
 
-                if (context.mounted) {
-                  Navigator.pop(context);
+                if (dialogContext.mounted) {
+                  Navigator.pop(dialogContext);
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(success ? 'Data berhasil diupdate' : 'Gagal mengupdate data'),
@@ -436,22 +423,22 @@ class _CostRecordScreenState extends State<CostRecordScreen> {
     );
   }
 
-  void _showDeleteDialog(BuildContext context, CostRecord record, CostRecordProvider provider) {
+  void _showDeleteDialog(BuildContext context, WidgetRef ref, CostRecord record) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Hapus Data'),
         content: const Text('Apakah Anda yakin ingin menghapus data ini?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Batal'),
           ),
           ElevatedButton(
             onPressed: () async {
-              final success = await provider.deleteRecord(record.id);
-              if (context.mounted) {
-                Navigator.pop(context);
+              final success = await ref.read(costRecordProvider.notifier).deleteRecord(record.id);
+              if (dialogContext.mounted) {
+                Navigator.pop(dialogContext);
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(success ? 'Data berhasil dihapus' : 'Gagal menghapus data'),
