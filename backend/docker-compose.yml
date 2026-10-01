@@ -3,6 +3,7 @@ version: '3.8'
 services:
   api:
     build: .
+    container_name: egg-api
     ports:
       - "8000:8000"
     environment:
@@ -14,9 +15,12 @@ services:
     depends_on:
       - db
     restart: unless-stopped
+    networks:
+      - egg-network
 
   db:
     image: postgres:15
+    container_name: egg-db
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
@@ -26,6 +30,12 @@ services:
     ports:
       - "5432:5432"
     restart: unless-stopped
+    networks:
+      - egg-network
+
+networks:
+  egg-network:
+    name: egg-netw
 
 volumes:
   postgres_data:
