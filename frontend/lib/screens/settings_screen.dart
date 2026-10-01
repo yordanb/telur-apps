@@ -94,6 +94,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final auth = ref.watch(authProvider);
     final user = auth.user;
     final isAdmin = user?.isAdmin == true;
+    final roleColor = user?.isAdmin == true
+        ? Colors.orange
+        : (user?.isInvestor == true ? Colors.purple : Colors.blue);
     final themeState = ref.watch(themeColorProvider);
 
     return Scaffold(
@@ -149,17 +152,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             vertical: 2,
                           ),
                           decoration: BoxDecoration(
-                            color: isAdmin
-                                ? Colors.orange[100]
-                                : Colors.blue[100],
+                            color: roleColor.withOpacity(0.15),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
-                            isAdmin ? 'Admin' : 'Pegawai',
+                            user?.roleLabel ?? '-',
                             style: TextStyle(
                               fontSize: 12,
-                              color:
-                                  isAdmin ? Colors.orange[800] : Colors.blue[800],
+                              fontWeight: FontWeight.w600,
+                              color: roleColor,
                             ),
                           ),
                         ),

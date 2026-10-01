@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../providers/egg_production_provider.dart';
+import '../providers/auth_provider.dart';
 import '../models/egg_production.dart';
 
 class EggProductionScreen extends ConsumerWidget {
@@ -10,16 +11,20 @@ class EggProductionScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(eggProductionProvider);
+    final canEdit =
+        ref.watch(authProvider.select((s) => s.user?.canEdit ?? true));
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Produksi Telur'),
       ),
       body: _buildBody(context, ref, state),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddDialog(context, ref),
-        child: const Icon(Icons.add),
-      ),
+      floatingActionButton: canEdit
+          ? FloatingActionButton(
+              onPressed: () => _showAddDialog(context, ref),
+              child: const Icon(Icons.add),
+            )
+          : null,
     );
   }
 
@@ -77,6 +82,9 @@ class EggProductionScreen extends ConsumerWidget {
 
   Widget _buildProductionCard(
       BuildContext context, WidgetRef ref, EggProduction production) {
+    final canEdit =
+        ref.watch(authProvider.select((s) => s.user?.canEdit ?? true));
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
@@ -94,33 +102,34 @@ class EggProductionScreen extends ConsumerWidget {
                       .titleMedium
                       ?.copyWith(fontWeight: FontWeight.bold),
                 ),
-                PopupMenuButton(
-                  itemBuilder: (context) => [
-                    const PopupMenuItem(
-                      value: 'edit',
-                      child: Row(children: [
-                        Icon(Icons.edit),
-                        SizedBox(width: 8),
-                        Text('Edit'),
-                      ]),
-                    ),
-                    const PopupMenuItem(
-                      value: 'delete',
-                      child: Row(children: [
-                        Icon(Icons.delete, color: Colors.red),
-                        SizedBox(width: 8),
-                        Text('Hapus', style: TextStyle(color: Colors.red)),
-                      ]),
-                    ),
-                  ],
-                  onSelected: (value) {
-                    if (value == 'edit') {
-                      _showEditDialog(context, ref, production);
-                    } else {
-                      _showDeleteDialog(context, ref, production);
-                    }
-                  },
-                ),
+                if (canEdit)
+                  PopupMenuButton(
+                    itemBuilder: (context) => [
+                      const PopupMenuItem(
+                        value: 'edit',
+                        child: Row(children: [
+                          Icon(Icons.edit),
+                          SizedBox(width: 8),
+                          Text('Edit'),
+                        ]),
+                      ),
+                      const PopupMenuItem(
+                        value: 'delete',
+                        child: Row(children: [
+                          Icon(Icons.delete, color: Colors.red),
+                          SizedBox(width: 8),
+                          Text('Hapus', style: TextStyle(color: Colors.red)),
+                        ]),
+                      ),
+                    ],
+                    onSelected: (value) {
+                      if (value == 'edit') {
+                        _showEditDialog(context, ref, production);
+                      } else {
+                        _showDeleteDialog(context, ref, production);
+                      }
+                    },
+                  ),
               ],
             ),
             const SizedBox(height: 12),

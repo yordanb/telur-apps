@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../providers/feed_record_provider.dart';
+import '../providers/auth_provider.dart';
 import '../models/feed_record.dart';
 
 class FeedRecordScreen extends ConsumerWidget {
@@ -10,16 +11,20 @@ class FeedRecordScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(feedRecordProvider);
+    final canEdit =
+        ref.watch(authProvider.select((s) => s.user?.canEdit ?? true));
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Pencatatan Pakan'),
       ),
       body: _buildBody(context, ref, state),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddDialog(context, ref),
-        child: const Icon(Icons.add),
-      ),
+      floatingActionButton: canEdit
+          ? FloatingActionButton(
+              onPressed: () => _showAddDialog(context, ref),
+              child: const Icon(Icons.add),
+            )
+          : null,
     );
   }
 
@@ -74,6 +79,8 @@ class FeedRecordScreen extends ConsumerWidget {
 
   Widget _buildRecordCard(BuildContext context, WidgetRef ref, FeedRecord record) {
     final formatter = NumberFormat('#,###', 'id_ID');
+    final canEdit =
+        ref.watch(authProvider.select((s) => s.user?.canEdit ?? true));
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -91,37 +98,38 @@ class FeedRecordScreen extends ConsumerWidget {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                PopupMenuButton(
-                  itemBuilder: (context) => [
-                    const PopupMenuItem(
-                      value: 'edit',
-                      child: Row(
-                        children: [
-                          Icon(Icons.edit),
-                          SizedBox(width: 8),
-                          Text('Edit'),
-                        ],
+                if (canEdit)
+                  PopupMenuButton(
+                    itemBuilder: (context) => [
+                      const PopupMenuItem(
+                        value: 'edit',
+                        child: Row(
+                          children: [
+                            Icon(Icons.edit),
+                            SizedBox(width: 8),
+                            Text('Edit'),
+                          ],
+                        ),
                       ),
-                    ),
-                    const PopupMenuItem(
-                      value: 'delete',
-                      child: Row(
-                        children: [
-                          Icon(Icons.delete, color: Colors.red),
-                          SizedBox(width: 8),
-                          Text('Hapus', style: TextStyle(color: Colors.red)),
-                        ],
+                      const PopupMenuItem(
+                        value: 'delete',
+                        child: Row(
+                          children: [
+                            Icon(Icons.delete, color: Colors.red),
+                            SizedBox(width: 8),
+                            Text('Hapus', style: TextStyle(color: Colors.red)),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
-                  onSelected: (value) {
-                    if (value == 'edit') {
-                      _showEditDialog(context, ref, record);
-                    } else if (value == 'delete') {
-                      _showDeleteDialog(context, ref, record);
-                    }
-                  },
-                ),
+                    ],
+                    onSelected: (value) {
+                      if (value == 'edit') {
+                        _showEditDialog(context, ref, record);
+                      } else if (value == 'delete') {
+                        _showDeleteDialog(context, ref, record);
+                      }
+                    },
+                  ),
               ],
             ),
             const SizedBox(height: 12),

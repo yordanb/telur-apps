@@ -42,4 +42,14 @@ class User {
   }
 
   bool get isAdmin => role == 'admin';
+  bool get isInvestor => role == 'investor';
+
+  /// Admin & pegawai bisa input data; investor hanya boleh melihat.
+  bool get canEdit => !isInvestor;
+
+  String get roleLabel {
+    if (isAdmin) return 'Admin';
+    if (isInvestor) return 'Investor';
+    return 'Pegawai';
+  }
 }

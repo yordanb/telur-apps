@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import date
 from app.database import get_db
-from app.auth import get_current_active_user, require_admin
+from app.auth import get_current_active_user, require_editor, can_view_all_data
 from app.models import User, CostRecord
 from app.schemas import CostRecordCreate, CostRecordUpdate, CostRecordResponse
 
@@ -13,7 +13,7 @@ router = APIRouter(prefix="/api/cost-records", tags=["Cost Records"])
 @router.post("/", response_model=CostRecordResponse)
 def create_cost_record(
     record: CostRecordCreate,
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_editor),
     db: Session = Depends(get_db)
 ):
     db_record = CostRecord(
@@ -38,7 +38,7 @@ def get_cost_records(
 ):
     query = db.query(CostRecord)
 
-    if current_user.role.value != "admin":
+    if not can_view_all_data(current_user):
         query = query.filter(CostRecord.user_id == current_user.id)
 
     if start_date:
@@ -61,7 +61,7 @@ def get_cost_record(
     if not record:
         raise HTTPException(status_code=404, detail="Cost record not found")
 
-    if current_user.role.value != "admin" and record.user_id != current_user.id:
+    if not can_view_all_data(current_user) and record.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized to access this record")
 
     return record
@@ -71,14 +71,14 @@ def get_cost_record(
 def update_cost_record(
     record_id: int,
     record_update: CostRecordUpdate,
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_editor),
     db: Session = Depends(get_db)
 ):
     record = db.query(CostRecord).filter(CostRecord.id == record_id).first()
     if not record:
         raise HTTPException(status_code=404, detail="Cost record not found")
 
-    if current_user.role.value != "admin" and record.user_id != current_user.id:
+    if not can_view_all_data(current_user) and record.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized to update this record")
 
     update_data = record_update.dict(exclude_unset=True)
@@ -93,14 +93,14 @@ def update_cost_record(
 @router.delete("/{record_id}")
 def delete_cost_record(
     record_id: int,
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_editor),
     db: Session = Depends(get_db)
 ):
     record = db.query(CostRecord).filter(CostRecord.id == record_id).first()
     if not record:
         raise HTTPException(status_code=404, detail="Cost record not found")
 
-    if current_user.role.value != "admin" and record.user_id != current_user.id:
+    if not can_view_all_data(current_user) and record.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized to delete this record")
 
     db.delete(record)

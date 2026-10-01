@@ -75,3 +75,18 @@ def require_admin(current_user: User = Depends(get_current_active_user)):
             detail="Admin access required"
         )
     return current_user
+
+
+def can_view_all_data(user: User) -> bool:
+    """Admin dan investor bisa melihat semua data; pegawai hanya data miliknya."""
+    return user.role.value in ("admin", "investor")
+
+
+def require_editor(current_user: User = Depends(get_current_active_user)):
+    """Blokir investor (read-only) dari endpoint create/update/delete."""
+    if current_user.role.value == "investor":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Investor hanya memiliki akses baca (read-only)"
+        )
+    return current_user

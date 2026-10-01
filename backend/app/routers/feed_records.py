@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import date
 from app.database import get_db
-from app.auth import get_current_active_user, require_admin
+from app.auth import get_current_active_user, require_editor, can_view_all_data
 from app.models import User, FeedRecord
 from app.schemas import FeedRecordCreate, FeedRecordUpdate, FeedRecordResponse
 
@@ -13,7 +13,7 @@ router = APIRouter(prefix="/api/feed-records", tags=["Feed Records"])
 @router.post("/", response_model=FeedRecordResponse)
 def create_feed_record(
     record: FeedRecordCreate,
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_editor),
     db: Session = Depends(get_db)
 ):
     db_record = FeedRecord(
@@ -37,7 +37,7 @@ def get_feed_records(
 ):
     query = db.query(FeedRecord)
 
-    if current_user.role.value != "admin":
+    if not can_view_all_data(current_user):
         query = query.filter(FeedRecord.user_id == current_user.id)
 
     if start_date:
@@ -58,7 +58,7 @@ def get_feed_record(
     if not record:
         raise HTTPException(status_code=404, detail="Feed record not found")
 
-    if current_user.role.value != "admin" and record.user_id != current_user.id:
+    if not can_view_all_data(current_user) and record.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized to access this record")
 
     return record
@@ -68,14 +68,14 @@ def get_feed_record(
 def update_feed_record(
     record_id: int,
     record_update: FeedRecordUpdate,
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_editor),
     db: Session = Depends(get_db)
 ):
     record = db.query(FeedRecord).filter(FeedRecord.id == record_id).first()
     if not record:
         raise HTTPException(status_code=404, detail="Feed record not found")
 
-    if current_user.role.value != "admin" and record.user_id != current_user.id:
+    if not can_view_all_data(current_user) and record.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized to update this record")
 
     update_data = record_update.dict(exclude_unset=True)
@@ -90,14 +90,14 @@ def update_feed_record(
 @router.delete("/{record_id}")
 def delete_feed_record(
     record_id: int,
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_editor),
     db: Session = Depends(get_db)
 ):
     record = db.query(FeedRecord).filter(FeedRecord.id == record_id).first()
     if not record:
         raise HTTPException(status_code=404, detail="Feed record not found")
 
-    if current_user.role.value != "admin" and record.user_id != current_user.id:
+    if not can_view_all_data(current_user) and record.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized to delete this record")
 
     db.delete(record)

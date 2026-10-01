@@ -69,12 +69,21 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
     );
   }
 
+  /// Warna badge sesuai role: Admin (oranye), Investor (ungu), Pegawai (biru).
+  Color _roleColor(User user) {
+    if (user.isAdmin) return Colors.orange;
+    if (user.isInvestor) return Colors.purple;
+    return Colors.blue;
+  }
+
   Widget _buildUserCard(User user) {
+    final color = _roleColor(user);
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: user.isAdmin ? Colors.orange : Colors.blue,
+          backgroundColor: color,
           child: Text(
             user.fullName.substring(0, 1).toUpperCase(),
             style: const TextStyle(color: Colors.white),
@@ -85,14 +94,15 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
         trailing: Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
-            color: user.isAdmin ? Colors.orange[100] : Colors.blue[100],
+            color: color.withOpacity(0.15),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Text(
-            user.isAdmin ? 'Admin' : 'Pegawai',
+            user.roleLabel,
             style: TextStyle(
               fontSize: 12,
-              color: user.isAdmin ? Colors.orange[800] : Colors.blue[800],
+              fontWeight: FontWeight.w600,
+              color: color,
             ),
           ),
         ),
@@ -143,6 +153,7 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
                   items: const [
                     DropdownMenuItem(value: 'pegawai', child: Text('Pegawai')),
                     DropdownMenuItem(value: 'admin', child: Text('Admin')),
+                    DropdownMenuItem(value: 'investor', child: Text('Investor')),
                   ],
                   onChanged: (value) {
                     setDialogState(() {

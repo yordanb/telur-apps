@@ -8,6 +8,7 @@ import enum
 class UserRole(str, enum.Enum):
     admin = "admin"
     pegawai = "pegawai"
+    investor = "investor"
 
 
 class User(Base):

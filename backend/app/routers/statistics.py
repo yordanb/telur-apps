@@ -4,7 +4,7 @@ from sqlalchemy import func, extract
 from typing import List, Optional
 from datetime import date
 from app.database import get_db
-from app.auth import get_current_active_user, require_admin
+from app.auth import get_current_active_user, require_admin, can_view_all_data
 from app.models import User, EggProduction, ChickenManagement, FeedRecord, CostRecord
 from app.schemas import DailyStatistics, MonthlyStatistics
 
@@ -38,7 +38,7 @@ def get_daily_statistics(
         func.date(EggProduction.date) == func.date(CostRecord.date)
     )
 
-    if current_user.role.value != "admin":
+    if not can_view_all_data(current_user):
         query = query.filter(EggProduction.user_id == current_user.id)
 
     if start_date:
@@ -85,7 +85,7 @@ def get_monthly_statistics(
         extract('year', EggProduction.date) == year
     )
 
-    if current_user.role.value != "admin":
+    if not can_view_all_data(current_user):
         egg_stats = egg_stats.filter(EggProduction.user_id == current_user.id)
 
     egg_stats = egg_stats.group_by('year', 'month').all()
@@ -99,7 +99,7 @@ def get_monthly_statistics(
         extract('year', FeedRecord.date) == year
     )
 
-    if current_user.role.value != "admin":
+    if not can_view_all_data(current_user):
         feed_stats = feed_stats.filter(FeedRecord.user_id == current_user.id)
 
     feed_stats = feed_stats.group_by('year', 'month').all()
@@ -113,7 +113,7 @@ def get_monthly_statistics(
         extract('year', CostRecord.date) == year
     )
 
-    if current_user.role.value != "admin":
+    if not can_view_all_data(current_user):
         cost_stats = cost_stats.filter(CostRecord.user_id == current_user.id)
 
     cost_stats = cost_stats.group_by('year', 'month').all()
@@ -127,7 +127,7 @@ def get_monthly_statistics(
         extract('year', ChickenManagement.date) == year
     )
 
-    if current_user.role.value != "admin":
+    if not can_view_all_data(current_user):
         chicken_stats = chicken_stats.filter(ChickenManagement.user_id == current_user.id)
 
     chicken_stats = chicken_stats.group_by('year', 'month').all()

@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import date
 from app.database import get_db
-from app.auth import get_current_active_user, require_admin
+from app.auth import get_current_active_user, require_editor, can_view_all_data
 from app.models import User, ChickenManagement
 from app.schemas import ChickenManagementCreate, ChickenManagementUpdate, ChickenManagementResponse
 
@@ -13,7 +13,7 @@ router = APIRouter(prefix="/api/chicken-managements", tags=["Chicken Managements
 @router.post("/", response_model=ChickenManagementResponse)
 def create_chicken_management(
     management: ChickenManagementCreate,
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_editor),
     db: Session = Depends(get_db)
 ):
     db_management = ChickenManagement(
@@ -37,7 +37,7 @@ def get_chicken_managements(
 ):
     query = db.query(ChickenManagement)
 
-    if current_user.role.value != "admin":
+    if not can_view_all_data(current_user):
         query = query.filter(ChickenManagement.user_id == current_user.id)
 
     if start_date:
@@ -58,7 +58,7 @@ def get_chicken_management(
     if not management:
         raise HTTPException(status_code=404, detail="Management record not found")
 
-    if current_user.role.value != "admin" and management.user_id != current_user.id:
+    if not can_view_all_data(current_user) and management.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized to access this record")
 
     return management
@@ -68,14 +68,14 @@ def get_chicken_management(
 def update_chicken_management(
     management_id: int,
     management_update: ChickenManagementUpdate,
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_editor),
     db: Session = Depends(get_db)
 ):
     management = db.query(ChickenManagement).filter(ChickenManagement.id == management_id).first()
     if not management:
         raise HTTPException(status_code=404, detail="Management record not found")
 
-    if current_user.role.value != "admin" and management.user_id != current_user.id:
+    if not can_view_all_data(current_user) and management.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized to update this record")
 
     update_data = management_update.dict(exclude_unset=True)
@@ -90,14 +90,14 @@ def update_chicken_management(
 @router.delete("/{management_id}")
 def delete_chicken_management(
     management_id: int,
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_editor),
     db: Session = Depends(get_db)
 ):
     management = db.query(ChickenManagement).filter(ChickenManagement.id == management_id).first()
     if not management:
         raise HTTPException(status_code=404, detail="Management record not found")
 
-    if current_user.role.value != "admin" and management.user_id != current_user.id:
+    if not can_view_all_data(current_user) and management.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized to delete this record")
 
     db.delete(management)

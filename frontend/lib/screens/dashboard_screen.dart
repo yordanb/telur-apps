@@ -281,6 +281,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     // Warna mengikuti tema yang dipilih di Pengaturan
     final primary = Theme.of(context).colorScheme.primary;
     final dark = Color.lerp(primary, Colors.black, 0.25)!;
+    final canEdit =
+        ref.watch(authProvider.select((s) => s.user?.canEdit ?? true));
 
     return Container(
       width: double.infinity,
@@ -325,9 +327,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'CATAT PRODUKSI HARI INI',
-                        style: TextStyle(
+                      Text(
+                        canEdit
+                            ? 'CATAT PRODUKSI HARI INI'
+                            : 'PRODUKSI HARI INI',
+                        style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
                           fontSize: 15,
@@ -336,9 +340,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        hasRecord
-                            ? 'Sudah $todayEggs telur — ketuk untuk perbarui'
-                            : 'Belum dicatat — ketuk untuk mulai',
+                        !canEdit
+                            ? 'Mode investor — hanya bisa melihat data'
+                            : hasRecord
+                                ? 'Sudah $todayEggs telur — ketuk untuk perbarui'
+                                : 'Belum dicatat — ketuk untuk mulai',
                         style: TextStyle(
                           color: Colors.white.withOpacity(0.9),
                           fontSize: 12,
@@ -354,7 +360,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
-                    hasRecord ? Icons.edit : Icons.add,
+                    !canEdit
+                        ? Icons.visibility_outlined
+                        : (hasRecord ? Icons.edit : Icons.add),
                     color: dark,
                   ),
                 ),

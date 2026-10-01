@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime, date
 from app.database import get_db
-from app.auth import get_current_active_user, require_admin
+from app.auth import get_current_active_user, require_editor, can_view_all_data
 from app.models import User, EggProduction
 from app.schemas import EggProductionCreate, EggProductionUpdate, EggProductionResponse
 
@@ -13,7 +13,7 @@ router = APIRouter(prefix="/api/egg-productions", tags=["Egg Productions"])
 @router.post("/", response_model=EggProductionResponse)
 def create_egg_production(
     production: EggProductionCreate,
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_editor),
     db: Session = Depends(get_db)
 ):
     db_production = EggProduction(
@@ -37,8 +37,8 @@ def get_egg_productions(
 ):
     query = db.query(EggProduction)
 
-    # Non-admin users can only see their own data
-    if current_user.role.value != "admin":
+    # Admin & investor melihat semua data; pegawai hanya data miliknya
+    if not can_view_all_data(current_user):
         query = query.filter(EggProduction.user_id == current_user.id)
 
     if start_date:
@@ -60,7 +60,7 @@ def get_egg_production(
         raise HTTPException(status_code=404, detail="Production record not found")
 
     # Check permission
-    if current_user.role.value != "admin" and production.user_id != current_user.id:
+    if not can_view_all_data(current_user) and production.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized to access this record")
 
     return production
@@ -70,7 +70,7 @@ def get_egg_production(
 def update_egg_production(
     production_id: int,
     production_update: EggProductionUpdate,
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_editor),
     db: Session = Depends(get_db)
 ):
     production = db.query(EggProduction).filter(EggProduction.id == production_id).first()
@@ -78,7 +78,7 @@ def update_egg_production(
         raise HTTPException(status_code=404, detail="Production record not found")
 
     # Check permission
-    if current_user.role.value != "admin" and production.user_id != current_user.id:
+    if not can_view_all_data(current_user) and production.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized to update this record")
 
     update_data = production_update.dict(exclude_unset=True)
@@ -93,7 +93,7 @@ def update_egg_production(
 @router.delete("/{production_id}")
 def delete_egg_production(
     production_id: int,
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_editor),
     db: Session = Depends(get_db)
 ):
     production = db.query(EggProduction).filter(EggProduction.id == production_id).first()
@@ -101,7 +101,7 @@ def delete_egg_production(
         raise HTTPException(status_code=404, detail="Production record not found")
 
     # Check permission
-    if current_user.role.value != "admin" and production.user_id != current_user.id:
+    if not can_view_all_data(current_user) and production.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized to delete this record")
 
     db.delete(production)
