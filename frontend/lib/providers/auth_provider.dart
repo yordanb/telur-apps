@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
@@ -68,11 +69,14 @@ class AuthNotifier extends Notifier<AuthState> {
       // Body sebagai Map agar http meng-URL-encode otomatis.
       // Versi lama memakai string mentah 'username=$u&password=$p' sehingga
       // password berisi & = + % atau spasi selalu gagal (tapi di /docs bisa).
-      final response = await http.post(
-        Uri.parse('${ApiService.baseUrl}/auth/login'),
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: {'username': username.trim(), 'password': password},
-      );
+      final response = await http
+          .post(
+            Uri.parse('${ApiService.baseUrl}/auth/login'),
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: {'username': username.trim(), 'password': password},
+          )
+          .timeout(ApiService.requestTimeout);
+      print('Login response: ${response.statusCode} - ${response.body}');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -108,7 +112,9 @@ class AuthNotifier extends Notifier<AuthState> {
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        error: 'Network error: ${e.toString()}',
+        error: e is TimeoutException
+            ? 'Koneksi ke server timeout. Periksa internet lalu coba lagi.'
+            : 'Network error: ${e.toString()}',
       );
       return false;
     }
