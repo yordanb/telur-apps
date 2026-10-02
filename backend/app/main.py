@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from app.config import get_settings
 from app.database import engine, Base
-from app.routers import auth, egg_production, chicken_management, feed_records, cost_records, statistics, user_management
+from app.routers import auth, egg_production, chicken_management, feed_records, cost_records, egg_sales, statistics, user_management
 
 settings = get_settings()
 
@@ -51,6 +51,7 @@ app.include_router(egg_production.router)
 app.include_router(chicken_management.router)
 app.include_router(feed_records.router)
 app.include_router(cost_records.router)
+app.include_router(egg_sales.router)
 app.include_router(statistics.router)
 app.include_router(user_management.router)
 

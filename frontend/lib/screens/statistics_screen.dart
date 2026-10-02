@@ -6,6 +6,7 @@ import '../providers/egg_production_provider.dart';
 import '../providers/chicken_management_provider.dart';
 import '../providers/feed_record_provider.dart';
 import '../providers/cost_record_provider.dart';
+import '../providers/egg_sale_provider.dart';
 
 class StatisticsScreen extends ConsumerWidget {
   const StatisticsScreen({super.key});
@@ -16,6 +17,7 @@ class StatisticsScreen extends ConsumerWidget {
       ref.read(chickenManagementProvider.notifier).fetchManagements(),
       ref.read(feedRecordProvider.notifier).fetchRecords(),
       ref.read(costRecordProvider.notifier).fetchRecords(),
+      ref.read(eggSaleProvider.notifier).fetchSales(),
     ]);
   }
 
@@ -34,6 +36,8 @@ class StatisticsScreen extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildEggProductionChart(context, ref),
+              const SizedBox(height: 24),
+              _buildSalesChart(context, ref),
               const SizedBox(height: 24),
               _buildChickenChart(context, ref),
               const SizedBox(height: 24),
@@ -118,6 +122,113 @@ class StatisticsScreen extends ConsumerWidget {
                         BarChartRodData(
                           toY: entry.value.totalEggs.toDouble(),
                           color: Colors.orange,
+                          width: 16,
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(4),
+                            topRight: Radius.circular(4),
+                          ),
+                        ),
+                      ],
+                    );
+                  }).toList(),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSalesChart(BuildContext context, WidgetRef ref) {
+    final saleState = ref.watch(eggSaleProvider);
+
+    final now = DateTime.now();
+    final List<double> revenues = [];
+
+    for (int i = 6; i >= 0; i--) {
+      final date = now.subtract(Duration(days: i));
+      final dayStart = DateTime(date.year, date.month, date.day);
+      final dayEnd = dayStart.add(const Duration(days: 1));
+
+      final revenue = saleState.sales
+          .where((s) => s.date.isAfter(dayStart) && s.date.isBefore(dayEnd))
+          .fold<double>(0, (sum, s) => sum + s.totalPrice);
+
+      revenues.add(revenue);
+    }
+
+    if (revenues.every((r) => r == 0)) {
+      return _buildEmptyChart(context, 'Pendapatan');
+    }
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Pendapatan Penjualan (7 Hari Terakhir)',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 200,
+              child: BarChart(
+                BarChartData(
+                  alignment: BarChartAlignment.spaceAround,
+                  maxY: revenues.reduce((a, b) => a > b ? a : b) * 1.2,
+                  barTouchData: BarTouchData(enabled: true),
+                  titlesData: FlTitlesData(
+                    show: true,
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        getTitlesWidget: (value, meta) {
+                          final index = value.toInt();
+                          if (index >= 0 && index < 7) {
+                            final date =
+                                now.subtract(Duration(days: 6 - index));
+                            return Padding(
+                              padding: const EdgeInsets.only(top: 8),
+                              child: Text(
+                                DateFormat('dd/MM').format(date),
+                                style: const TextStyle(fontSize: 10),
+                              ),
+                            );
+                          }
+                          return const Text('');
+                        },
+                      ),
+                    ),
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 60,
+                        getTitlesWidget: (value, meta) {
+                          return Text(
+                            '${(value / 1000).toInt()}k',
+                            style: const TextStyle(fontSize: 10),
+                          );
+                        },
+                      ),
+                    ),
+                    topTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false)),
+                    rightTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false)),
+                  ),
+                  borderData: FlBorderData(show: false),
+                  barGroups: revenues.asMap().entries.map((entry) {
+                    return BarChartGroupData(
+                      x: entry.key,
+                      barRods: [
+                        BarChartRodData(
+                          toY: entry.value,
+                          color: Colors.teal,
                           width: 16,
                           borderRadius: const BorderRadius.only(
                             topLeft: Radius.circular(4),
@@ -367,6 +478,14 @@ class StatisticsScreen extends ConsumerWidget {
         : 0;
     final totalFeedCost = feedState.records.fold<double>(0, (sum, r) => sum + r.totalCost);
     final totalOtherCost = costState.records.fold<double>(0, (sum, r) => sum + r.amount);
+    final saleState = ref.watch(eggSaleProvider);
+    final totalRevenue = saleState.sales.fold<double>(0, (sum, s) => sum + s.totalPrice);
+    final soldButir = saleState.sales
+        .where((s) => s.unit == 'butir')
+        .fold<double>(0, (sum, s) => sum + s.quantity);
+    final soldKg = saleState.sales
+        .where((s) => s.unit == 'kg')
+        .fold<double>(0, (sum, s) => sum + s.quantity);
 
     final formatter = NumberFormat('#,###', 'id_ID');
 
@@ -414,6 +533,21 @@ class StatisticsScreen extends ConsumerWidget {
               title: 'Total Biaya Lain',
               value: 'Rp ${formatter.format(totalOtherCost)}',
               color: Colors.red,
+            ),
+            _buildSummaryCard(
+              context,
+              icon: Icons.payments,
+              title: 'Total Pendapatan',
+              value: 'Rp ${formatter.format(totalRevenue)}',
+              color: Colors.teal,
+            ),
+            _buildSummaryCard(
+              context,
+              icon: Icons.shopping_cart,
+              title: 'Telur Terjual',
+              value:
+                  '${formatter.format(soldButir)} butir • ${soldKg.toStringAsFixed(1)} kg',
+              color: Colors.blue,
             ),
           ],
         ),

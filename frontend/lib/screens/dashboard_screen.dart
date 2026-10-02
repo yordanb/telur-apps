@@ -6,6 +6,7 @@ import '../providers/egg_production_provider.dart';
 import '../providers/chicken_management_provider.dart';
 import '../providers/feed_record_provider.dart';
 import '../providers/cost_record_provider.dart';
+import '../providers/egg_sale_provider.dart';
 import 'egg_production_screen.dart';
 import 'chicken_management_screen.dart';
 import 'feed_record_screen.dart';
@@ -41,6 +42,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     ref.read(chickenManagementProvider.notifier).fetchManagements();
     ref.read(feedRecordProvider.notifier).fetchRecords();
     ref.read(costRecordProvider.notifier).fetchRecords();
+    ref.read(eggSaleProvider.notifier).fetchSales();
   }
 
   void _goToTab(int index) {
@@ -500,11 +502,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-  /// Gabungkan produksi telur, pakan, dan biaya → urutkan terbaru → 5 teratas
+  /// Gabungkan produksi telur, pakan, biaya, dan penjualan → terbaru → 5 teratas
   List<_ActivityItem> _recentActivities() {
     final eggs = ref.watch(eggProductionProvider.select((s) => s.productions));
     final feeds = ref.watch(feedRecordProvider.select((s) => s.records));
     final costs = ref.watch(costRecordProvider.select((s) => s.records));
+    final sales = ref.watch(eggSaleProvider.select((s) => s.sales));
     final dateFormat = DateFormat('dd MMM yyyy • HH:mm');
 
     final items = <_ActivityItem>[
@@ -531,6 +534,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             title: 'Biaya ${r.category}',
             subtitle: dateFormat.format(r.createdAt),
             value: 'Rp ${NumberFormat('#,###', 'id_ID').format(r.amount)}',
+          )),
+      ...sales.map((s) => _ActivityItem(
+            time: s.createdAt,
+            icon: Icons.shopping_cart,
+            color: Colors.teal,
+            title: 'Jual ${s.unit == 'kg' ? 'per Kg' : 'per Butir'}',
+            subtitle: dateFormat.format(s.createdAt),
+            value: 'Rp ${NumberFormat('#,###', 'id_ID').format(s.totalPrice)}',
           )),
     ];
 

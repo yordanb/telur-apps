@@ -11,6 +11,11 @@ class UserRole(str, enum.Enum):
     investor = "investor"
 
 
+class SaleUnit(str, enum.Enum):
+    butir = "butir"
+    kg = "kg"
+
+
 class User(Base):
     __tablename__ = "users"
 
@@ -29,6 +34,7 @@ class User(Base):
     chicken_managements = relationship("ChickenManagement", back_populates="user")
     feed_records = relationship("FeedRecord", back_populates="user")
     cost_records = relationship("CostRecord", back_populates="user")
+    egg_sales = relationship("EggSale", back_populates="user")
 
 
 class EggProduction(Base):
@@ -101,3 +107,21 @@ class CostRecord(Base):
 
     # Relationships
     user = relationship("User", back_populates="cost_records")
+
+
+class EggSale(Base):
+    __tablename__ = "egg_sales"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    date = Column(DateTime(timezone=True), nullable=False)
+    unit = Column(Enum(SaleUnit), nullable=False, default=SaleUnit.butir)  # butir | kg
+    quantity = Column(Float, nullable=False)  # jumlah butir atau kg
+    price_per_unit = Column(Float, nullable=False)  # Rp per butir atau per kg
+    total_price = Column(Float, nullable=False)  # quantity * price_per_unit (dihitung server)
+    notes = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    # Relationships
+    user = relationship("User", back_populates="egg_sales")

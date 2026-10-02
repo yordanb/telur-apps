@@ -3,9 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/chicken_management_provider.dart';
 import '../providers/feed_record_provider.dart';
 import '../providers/cost_record_provider.dart';
+import '../providers/egg_sale_provider.dart';
 import 'chicken_management_screen.dart';
 import 'feed_record_screen.dart';
 import 'cost_record_screen.dart';
+import 'egg_sale_screen.dart';
 
 /// Tab "Data" — hub berisi 3 catatan sekunder:
 /// Ayam, Pakan, dan Biaya. Masing-masing dibuka sebagai layar penuh (push).
@@ -29,6 +31,9 @@ class DataScreen extends ConsumerWidget {
     final costCount = ref.watch(
       costRecordProvider.select((s) => s.records.length),
     );
+    final saleCount = ref.watch(
+      eggSaleProvider.select((s) => s.sales.length),
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -40,6 +45,7 @@ class DataScreen extends ConsumerWidget {
             ref.read(chickenManagementProvider.notifier).fetchManagements(),
             ref.read(feedRecordProvider.notifier).fetchRecords(),
             ref.read(costRecordProvider.notifier).fetchRecords(),
+            ref.read(eggSaleProvider.notifier).fetchSales(),
           ]);
         },
         child: ListView(
@@ -82,6 +88,16 @@ class DataScreen extends ConsumerWidget {
               count: costCount,
               countLabel: 'entri',
               onTap: () => _open(context, const CostRecordScreen()),
+            ),
+            const SizedBox(height: 12),
+            _DataCard(
+              icon: Icons.shopping_cart,
+              color: Colors.teal,
+              title: 'Penjualan Telur',
+              subtitle: 'Penjualan per butir atau per kg + pendapatan',
+              count: saleCount,
+              countLabel: 'transaksi',
+              onTap: () => _open(context, const EggSaleScreen()),
             ),
           ],
         ),

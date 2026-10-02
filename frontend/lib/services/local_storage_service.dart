@@ -6,6 +6,7 @@ class LocalStorageService {
   static const String _chickenManagementsKey = 'offline_chicken_managements';
   static const String _feedRecordsKey = 'offline_feed_records';
   static const String _costRecordsKey = 'offline_cost_records';
+  static const String _eggSalesKey = 'offline_egg_sales';
 
   // Egg Productions
   static Future<List<Map<String, dynamic>>> getOfflineEggProductions() async {
@@ -93,5 +94,27 @@ class LocalStorageService {
   static Future<void> clearOfflineCostRecords() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_costRecordsKey);
+  }
+
+  // Egg Sales
+  static Future<List<Map<String, dynamic>>> getOfflineEggSales() async {
+    final prefs = await SharedPreferences.getInstance();
+    final data = prefs.getString(_eggSalesKey);
+    if (data != null) {
+      return List<Map<String, dynamic>>.from(jsonDecode(data));
+    }
+    return [];
+  }
+
+  static Future<void> saveOfflineEggSale(Map<String, dynamic> sale) async {
+    final sales = await getOfflineEggSales();
+    sales.add(sale);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_eggSalesKey, jsonEncode(sales));
+  }
+
+  static Future<void> clearOfflineEggSales() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_eggSalesKey);
   }
 }

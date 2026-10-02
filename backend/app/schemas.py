@@ -1,7 +1,7 @@
 from pydantic import BaseModel, EmailStr
 from datetime import datetime
 from typing import Optional, List
-from app.models import UserRole
+from app.models import UserRole, SaleUnit
 
 
 # ============== User Schemas ==============
@@ -178,6 +178,39 @@ class CostRecordResponse(CostRecordBase):
         from_attributes = True
 
 
+# ============== Egg Sale Schemas ==============
+class EggSaleBase(BaseModel):
+    date: datetime
+    unit: SaleUnit = SaleUnit.butir
+    quantity: float
+    price_per_unit: float
+    notes: Optional[str] = None
+
+
+class EggSaleCreate(EggSaleBase):
+    # total_price dihitung server (quantity * price_per_unit)
+    pass
+
+
+class EggSaleUpdate(BaseModel):
+    date: Optional[datetime] = None
+    unit: Optional[SaleUnit] = None
+    quantity: Optional[float] = None
+    price_per_unit: Optional[float] = None
+    notes: Optional[str] = None
+
+
+class EggSaleResponse(EggSaleBase):
+    id: int
+    user_id: int
+    total_price: float
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
 # ============== Statistics Schemas ==============
 class DailyStatistics(BaseModel):
     date: datetime
@@ -188,6 +221,7 @@ class DailyStatistics(BaseModel):
     healthy_chickens: int
     feed_cost: float
     other_cost: float
+    sales_revenue: float = 0
 
 
 class MonthlyStatistics(BaseModel):
@@ -199,4 +233,5 @@ class MonthlyStatistics(BaseModel):
     avg_daily_eggs: float
     total_feed_cost: float
     total_other_cost: float
+    total_sales_revenue: float = 0
     total_chickens_end: int
