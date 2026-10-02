@@ -65,10 +65,13 @@ class AuthNotifier extends Notifier<AuthState> {
     state = state.copyWith(isLoading: true, clearError: true);
 
     try {
+      // Body sebagai Map agar http meng-URL-encode otomatis.
+      // Versi lama memakai string mentah 'username=$u&password=$p' sehingga
+      // password berisi & = + % atau spasi selalu gagal (tapi di /docs bisa).
       final response = await http.post(
         Uri.parse('${ApiService.baseUrl}/auth/login'),
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: 'username=$username&password=$password',
+        body: {'username': username.trim(), 'password': password},
       );
 
       if (response.statusCode == 200) {
