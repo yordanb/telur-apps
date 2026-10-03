@@ -3,6 +3,7 @@ class CostRecord {
   final int userId;
   final DateTime date;
   final String category;
+  final String? subcategory;
   final String description;
   final double amount;
   final String? notes;
@@ -14,6 +15,7 @@ class CostRecord {
     required this.userId,
     required this.date,
     required this.category,
+    this.subcategory,
     required this.description,
     required this.amount,
     this.notes,
@@ -27,6 +29,7 @@ class CostRecord {
       userId: json['user_id'],
       date: DateTime.parse(json['date']),
       category: json['category'],
+      subcategory: json['subcategory'],
       description: json['description'],
       amount: json['amount'].toDouble(),
       notes: json['notes'],
@@ -39,9 +42,32 @@ class CostRecord {
     return {
       'date': date.toIso8601String(),
       'category': category,
+      'subcategory': subcategory,
       'description': description,
       'amount': amount,
       'notes': notes,
     };
   }
+
+  /// Label Indonesia untuk kategori (nilai tersimpan tetap bahasa Inggris
+  /// agar kompatibel dengan data lama).
+  static String categoryLabel(String category) {
+    switch (category.toLowerCase()) {
+      case 'pakan':
+        return 'Pakan';
+      case 'obat':
+        return 'Obat-obatan';
+      case 'operasional':
+        return 'Operasional';
+      default:
+        return 'Lainnya';
+    }
+  }
+
+  /// Subkategori operasional: perbaikan / perawatan / pembuatan kandang.
+  static const List<String> operationalSubs = [
+    'Perbaikan kandang',
+    'Perawatan kandang',
+    'Pembuatan kandang baru',
+  ];
 }

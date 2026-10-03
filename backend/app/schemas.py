@@ -1,7 +1,7 @@
 from pydantic import BaseModel, EmailStr
 from datetime import datetime
 from typing import Optional, List
-from app.models import UserRole, SaleUnit
+from app.models import UserRole, SaleUnit, CashDirection
 
 
 # ============== User Schemas ==============
@@ -151,6 +151,7 @@ class FeedRecordResponse(FeedRecordBase):
 class CostRecordBase(BaseModel):
     date: datetime
     category: str
+    subcategory: Optional[str] = None
     description: str
     amount: float
     notes: Optional[str] = None
@@ -163,6 +164,7 @@ class CostRecordCreate(CostRecordBase):
 class CostRecordUpdate(BaseModel):
     date: Optional[datetime] = None
     category: Optional[str] = None
+    subcategory: Optional[str] = None
     description: Optional[str] = None
     amount: Optional[float] = None
     notes: Optional[str] = None
@@ -211,6 +213,39 @@ class EggSaleResponse(EggSaleBase):
         from_attributes = True
 
 
+# ============== Cash Transaction Schemas ==============
+class CashTransactionBase(BaseModel):
+    date: datetime
+    direction: CashDirection
+    category: str
+    description: str
+    amount: float
+    notes: Optional[str] = None
+
+
+class CashTransactionCreate(CashTransactionBase):
+    pass
+
+
+class CashTransactionUpdate(BaseModel):
+    date: Optional[datetime] = None
+    direction: Optional[CashDirection] = None
+    category: Optional[str] = None
+    description: Optional[str] = None
+    amount: Optional[float] = None
+    notes: Optional[str] = None
+
+
+class CashTransactionResponse(CashTransactionBase):
+    id: int
+    user_id: int
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
 # ============== Statistics Schemas ==============
 class DailyStatistics(BaseModel):
     date: datetime
@@ -234,4 +269,6 @@ class MonthlyStatistics(BaseModel):
     total_feed_cost: float
     total_other_cost: float
     total_sales_revenue: float = 0
+    total_other_income: float = 0
+    total_other_expense: float = 0
     total_chickens_end: int

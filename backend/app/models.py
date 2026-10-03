@@ -16,6 +16,11 @@ class SaleUnit(str, enum.Enum):
     kg = "kg"
 
 
+class CashDirection(str, enum.Enum):
+    masuk = "masuk"
+    keluar = "keluar"
+
+
 class User(Base):
     __tablename__ = "users"
 
@@ -35,6 +40,7 @@ class User(Base):
     feed_records = relationship("FeedRecord", back_populates="user")
     cost_records = relationship("CostRecord", back_populates="user")
     egg_sales = relationship("EggSale", back_populates="user")
+    cash_transactions = relationship("CashTransaction", back_populates="user")
 
 
 class EggProduction(Base):
@@ -99,6 +105,7 @@ class CostRecord(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     date = Column(DateTime(timezone=True), nullable=False)
     category = Column(String(50), nullable=False)  # pakan, obat, operasional, lainnya
+    subcategory = Column(String(100), nullable=True)  # khusus operasional: perbaikan/perawatan/pembuatan kandang
     description = Column(String(255), nullable=False)
     amount = Column(Float, nullable=False)
     notes = Column(Text, nullable=True)
@@ -107,6 +114,24 @@ class CostRecord(Base):
 
     # Relationships
     user = relationship("User", back_populates="cost_records")
+
+
+class CashTransaction(Base):
+    __tablename__ = "cash_transactions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    date = Column(DateTime(timezone=True), nullable=False)
+    direction = Column(Enum(CashDirection), nullable=False)  # masuk | keluar
+    category = Column(String(100), nullable=False)
+    description = Column(String(255), nullable=False)
+    amount = Column(Float, nullable=False)
+    notes = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    # Relationships
+    user = relationship("User", back_populates="cash_transactions")
 
 
 class EggSale(Base):

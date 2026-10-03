@@ -5,7 +5,7 @@ from typing import List, Optional
 from datetime import date
 from app.database import get_db
 from app.auth import get_current_active_user, require_admin, can_view_all_data
-from app.models import User, EggProduction, ChickenManagement, FeedRecord, CostRecord, EggSale
+from app.models import User, EggProduction, ChickenManagement, FeedRecord, CostRecord, EggSale, CashTransaction
 from app.schemas import DailyStatistics, MonthlyStatistics
 
 router = APIRouter(prefix="/api/statistics", tags=["Statistics"])
@@ -137,6 +137,23 @@ def get_monthly_statistics(
 
     sales_stats = sales_stats.group_by('year', 'month').all()
 
+    # Get monthly other cash flows (transaksi kas manual)
+    def _cash_stats(direction: str):
+        q = db.query(
+            extract('year', CashTransaction.date).label('year'),
+            extract('month', CashTransaction.date).label('month'),
+            func.sum(CashTransaction.amount).label('total')
+        ).filter(
+            extract('year', CashTransaction.date) == year,
+            CashTransaction.direction == direction
+        )
+        if not can_view_all_data(current_user):
+            q = q.filter(CashTransaction.user_id == current_user.id)
+        return q.group_by('year', 'month').all()
+
+    cash_in_stats = _cash_stats('masuk')
+    cash_out_stats = _cash_stats('keluar')
+
     # Get chicken count at end of each month
     chicken_stats = db.query(
         extract('year', ChickenManagement.date).label('year'),
@@ -155,6 +172,8 @@ def get_monthly_statistics(
     feed_dict = {(int(r.year), int(r.month)): r.total_feed_cost or 0 for r in feed_stats}
     cost_dict = {(int(r.year), int(r.month)): r.total_other_cost or 0 for r in cost_stats}
     sales_dict = {(int(r.year), int(r.month)): r.total_sales_revenue or 0 for r in sales_stats}
+    cash_in_dict = {(int(r.year), int(r.month)): r.total or 0 for r in cash_in_stats}
+    cash_out_dict = {(int(r.year), int(r.month)): r.total or 0 for r in cash_out_stats}
     chicken_dict = {(int(r.year), int(r.month)): r.total_chickens_end or 0 for r in chicken_stats}
 
     results = []
@@ -171,6 +190,8 @@ def get_monthly_statistics(
             total_feed_cost=feed_dict.get((year_val, month_val), 0),
             total_other_cost=cost_dict.get((year_val, month_val), 0),
             total_sales_revenue=sales_dict.get((year_val, month_val), 0),
+            total_other_income=cash_in_dict.get((year_val, month_val), 0),
+            total_other_expense=cash_out_dict.get((year_val, month_val), 0),
             total_chickens_end=chicken_dict.get((year_val, month_val), 0)
         ))
 

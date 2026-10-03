@@ -84,6 +84,11 @@ const _queues = [
     '/egg-sales/',
     {'date', 'unit', 'quantity', 'price_per_unit', 'notes'},
   ),
+  _QueueConfig(
+    LocalStorageService.cashTransactionQueueKey,
+    '/cash-transactions/',
+    {'date', 'direction', 'category', 'description', 'amount', 'notes'},
+  ),
 ];
 
 class SyncService {

@@ -9,6 +9,7 @@ import '../providers/chicken_management_provider.dart';
 import '../providers/feed_record_provider.dart';
 import '../providers/cost_record_provider.dart';
 import '../providers/egg_sale_provider.dart';
+import '../providers/cash_transaction_provider.dart';
 import '../services/sync_service.dart';
 import 'egg_production_screen.dart';
 import 'chicken_management_screen.dart';
@@ -67,6 +68,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         ref.read(feedRecordProvider.notifier).fetchRecords(),
         ref.read(costRecordProvider.notifier).fetchRecords(),
         ref.read(eggSaleProvider.notifier).fetchSales(),
+        ref.read(cashTransactionProvider.notifier).fetchTransactions(),
       ]);
       ref.invalidate(pendingCountProvider);
       if (mounted && report.synced > 0) {
@@ -546,6 +548,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final feeds = ref.watch(feedRecordProvider.select((s) => s.records));
     final costs = ref.watch(costRecordProvider.select((s) => s.records));
     final sales = ref.watch(eggSaleProvider.select((s) => s.sales));
+    final cash =
+        ref.watch(cashTransactionProvider.select((s) => s.transactions));
     final dateFormat = DateFormat('dd MMM yyyy • HH:mm');
 
     final items = <_ActivityItem>[
@@ -580,6 +584,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             title: 'Jual ${s.unit == 'kg' ? 'per Kg' : 'per Butir'}',
             subtitle: dateFormat.format(s.createdAt),
             value: 'Rp ${NumberFormat('#,###', 'id_ID').format(s.totalPrice)}',
+          )),
+      ...cash.map((t) => _ActivityItem(
+            time: t.createdAt,
+            icon: t.isIncome ? Icons.arrow_downward : Icons.arrow_upward,
+            color: t.isIncome ? Colors.green : Colors.red,
+            title: 'Kas ${t.isIncome ? 'masuk' : 'keluar'} • ${t.category}',
+            subtitle: dateFormat.format(t.createdAt),
+            value:
+                '${t.isIncome ? '+' : '−'} Rp ${NumberFormat('#,###', 'id_ID').format(t.amount)}',
           )),
     ];
 

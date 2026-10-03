@@ -146,10 +146,29 @@ class CostRecordScreen extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: 12),
-            Row(
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 _buildCategoryChip(record.category),
-                const SizedBox(width: 8),
+                if (record.subcategory != null &&
+                    record.subcategory!.isNotEmpty)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Text(
+                      record.subcategory!,
+                      style: const TextStyle(
+                        color: Colors.blue,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
@@ -202,7 +221,7 @@ class CostRecordScreen extends ConsumerWidget {
         break;
       case 'operasional':
         color = Colors.blue;
-        icon = Icons.settings;
+        icon = Icons.handyman;
         break;
       default:
         color = Colors.grey;
@@ -221,7 +240,7 @@ class CostRecordScreen extends ConsumerWidget {
           Icon(icon, size: 16, color: color),
           const SizedBox(width: 4),
           Text(
-            category,
+            CostRecord.categoryLabel(category),
             style: TextStyle(
               color: color,
               fontWeight: FontWeight.w500,
@@ -235,6 +254,7 @@ class CostRecordScreen extends ConsumerWidget {
   void _showAddDialog(BuildContext context, WidgetRef ref) {
     final dateController = TextEditingController(text: DateFormat('yyyy-MM-dd').format(DateTime.now()));
     String selectedCategory = 'pakan';
+    String? selectedSub;
     final descriptionController = TextEditingController();
     final amountController = TextEditingController();
     final notesController = TextEditingController();
@@ -270,16 +290,38 @@ class CostRecordScreen extends ConsumerWidget {
                   decoration: const InputDecoration(labelText: 'Kategori'),
                   items: const [
                     DropdownMenuItem(value: 'pakan', child: Text('Pakan')),
-                    DropdownMenuItem(value: 'obat', child: Text('Obat')),
-                    DropdownMenuItem(value: 'operasional', child: Text('Operasional')),
+                    DropdownMenuItem(
+                        value: 'obat', child: Text('Obat-obatan')),
+                    DropdownMenuItem(
+                        value: 'operasional', child: Text('Operasional')),
                     DropdownMenuItem(value: 'lainnya', child: Text('Lainnya')),
                   ],
                   onChanged: (value) {
                     setDialogState(() {
                       selectedCategory = value!;
+                      if (selectedCategory != 'operasional') {
+                        selectedSub = null;
+                      }
                     });
                   },
                 ),
+                if (selectedCategory == 'operasional') ...[
+                  const SizedBox(height: 8),
+                  DropdownButtonFormField<String>(
+                    value: selectedSub,
+                    decoration:
+                        const InputDecoration(labelText: 'Subkategori'),
+                    items: CostRecord.operationalSubs
+                        .map((s) =>
+                            DropdownMenuItem(value: s, child: Text(s)))
+                        .toList(),
+                    onChanged: (value) {
+                      setDialogState(() {
+                        selectedSub = value;
+                      });
+                    },
+                  ),
+                ],
                 const SizedBox(height: 8),
                 TextField(
                   controller: descriptionController,
@@ -312,6 +354,9 @@ class CostRecordScreen extends ConsumerWidget {
                   userId: 0,
                   date: DateTime.parse(dateController.text),
                   category: selectedCategory,
+                  subcategory: selectedCategory == 'operasional'
+                      ? selectedSub
+                      : null,
                   description: descriptionController.text,
                   amount: double.parse(amountController.text),
                   notes: notesController.text.isEmpty ? null : notesController.text,
@@ -355,6 +400,7 @@ class CostRecordScreen extends ConsumerWidget {
   void _showEditDialog(BuildContext context, WidgetRef ref, CostRecord record) {
     final dateController = TextEditingController(text: DateFormat('yyyy-MM-dd').format(record.date));
     String selectedCategory = record.category;
+    String? selectedSub = record.subcategory;
     final descriptionController = TextEditingController(text: record.description);
     final amountController = TextEditingController(text: record.amount.toString());
     final notesController = TextEditingController(text: record.notes ?? '');
@@ -390,16 +436,38 @@ class CostRecordScreen extends ConsumerWidget {
                   decoration: const InputDecoration(labelText: 'Kategori'),
                   items: const [
                     DropdownMenuItem(value: 'pakan', child: Text('Pakan')),
-                    DropdownMenuItem(value: 'obat', child: Text('Obat')),
-                    DropdownMenuItem(value: 'operasional', child: Text('Operasional')),
+                    DropdownMenuItem(
+                        value: 'obat', child: Text('Obat-obatan')),
+                    DropdownMenuItem(
+                        value: 'operasional', child: Text('Operasional')),
                     DropdownMenuItem(value: 'lainnya', child: Text('Lainnya')),
                   ],
                   onChanged: (value) {
                     setDialogState(() {
                       selectedCategory = value!;
+                      if (selectedCategory != 'operasional') {
+                        selectedSub = null;
+                      }
                     });
                   },
                 ),
+                if (selectedCategory == 'operasional') ...[
+                  const SizedBox(height: 8),
+                  DropdownButtonFormField<String>(
+                    value: selectedSub,
+                    decoration:
+                        const InputDecoration(labelText: 'Subkategori'),
+                    items: CostRecord.operationalSubs
+                        .map((s) =>
+                            DropdownMenuItem(value: s, child: Text(s)))
+                        .toList(),
+                    onChanged: (value) {
+                      setDialogState(() {
+                        selectedSub = value;
+                      });
+                    },
+                  ),
+                ],
                 const SizedBox(height: 8),
                 TextField(
                   controller: descriptionController,
@@ -432,6 +500,9 @@ class CostRecordScreen extends ConsumerWidget {
                   userId: record.userId,
                   date: DateTime.parse(dateController.text),
                   category: selectedCategory,
+                  subcategory: selectedCategory == 'operasional'
+                      ? selectedSub
+                      : null,
                   description: descriptionController.text,
                   amount: double.parse(amountController.text),
                   notes: notesController.text.isEmpty ? null : notesController.text,

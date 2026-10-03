@@ -17,6 +17,7 @@ class LocalStorageService {
   static const String feedRecordQueueKey = 'offline_feed_records';
   static const String costRecordQueueKey = 'offline_cost_records';
   static const String eggSaleQueueKey = 'offline_egg_sales';
+  static const String cashTransactionQueueKey = 'offline_cash_transactions';
 
   // ============ Kunci cache (respons terakhir dari server) ============
   static const String eggProductionCacheKey = 'cache_egg_productions';
@@ -25,6 +26,7 @@ class LocalStorageService {
   static const String feedRecordCacheKey = 'cache_feed_records';
   static const String costRecordCacheKey = 'cache_cost_records';
   static const String eggSaleCacheKey = 'cache_egg_sales';
+  static const String cashTransactionCacheKey = 'cache_cash_transactions';
 
   static Future<List<Map<String, dynamic>>> readList(String key) async {
     final prefs = await SharedPreferences.getInstance();
