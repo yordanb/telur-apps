@@ -7,11 +7,13 @@ import '../providers/chicken_management_provider.dart';
 import '../providers/feed_record_provider.dart';
 import '../providers/cost_record_provider.dart';
 import '../providers/egg_sale_provider.dart';
+import '../services/sync_service.dart';
 
 class StatisticsScreen extends ConsumerWidget {
   const StatisticsScreen({super.key});
 
   Future<void> _loadData(WidgetRef ref) async {
+    await SyncService.syncAll();
     await Future.wait([
       ref.read(eggProductionProvider.notifier).fetchProductions(),
       ref.read(chickenManagementProvider.notifier).fetchManagements(),
@@ -19,6 +21,7 @@ class StatisticsScreen extends ConsumerWidget {
       ref.read(costRecordProvider.notifier).fetchRecords(),
       ref.read(eggSaleProvider.notifier).fetchSales(),
     ]);
+    ref.invalidate(pendingCountProvider);
   }
 
   @override

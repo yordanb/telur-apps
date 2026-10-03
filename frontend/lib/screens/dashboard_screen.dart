@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -7,6 +9,7 @@ import '../providers/chicken_management_provider.dart';
 import '../providers/feed_record_provider.dart';
 import '../providers/cost_record_provider.dart';
 import '../providers/egg_sale_provider.dart';
+import '../services/sync_service.dart';
 import 'egg_production_screen.dart';
 import 'chicken_management_screen.dart';
 import 'feed_record_screen.dart';
@@ -24,6 +27,8 @@ class DashboardScreen extends ConsumerStatefulWidget {
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   int _selectedIndex = 0;
+  StreamSubscription<ConnectivityResult>? _connectivitySub;
+  bool _loading = false;
 
   static const int _productionTab = 1;
   static const int _dataTab = 2;
@@ -35,14 +40,47 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadData();
     });
+    // Kirim antrean otomatis begitu koneksi kembali.
+    _connectivitySub =
+        Connectivity().onConnectivityChanged.listen((result) {
+      if (result != ConnectivityResult.none) {
+        _loadData();
+      }
+    });
   }
 
-  void _loadData() {
-    ref.read(eggProductionProvider.notifier).fetchProductions();
-    ref.read(chickenManagementProvider.notifier).fetchManagements();
-    ref.read(feedRecordProvider.notifier).fetchRecords();
-    ref.read(costRecordProvider.notifier).fetchRecords();
-    ref.read(eggSaleProvider.notifier).fetchSales();
+  @override
+  void dispose() {
+    _connectivitySub?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _loadData() async {
+    if (_loading) return;
+    _loading = true;
+    try {
+      // Antrean offline dikirim dulu, baru data segar diambil.
+      final report = await SyncService.syncAll();
+      await Future.wait([
+        ref.read(eggProductionProvider.notifier).fetchProductions(),
+        ref.read(chickenManagementProvider.notifier).fetchManagements(),
+        ref.read(feedRecordProvider.notifier).fetchRecords(),
+        ref.read(costRecordProvider.notifier).fetchRecords(),
+        ref.read(eggSaleProvider.notifier).fetchSales(),
+      ]);
+      ref.invalidate(pendingCountProvider);
+      if (mounted && report.synced > 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                '${report.synced} data offline berhasil dikirim ke server'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } finally {
+      _loading = false;
+    }
   }
 
   void _goToTab(int index) {

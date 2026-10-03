@@ -4,6 +4,7 @@ import '../providers/chicken_management_provider.dart';
 import '../providers/feed_record_provider.dart';
 import '../providers/cost_record_provider.dart';
 import '../providers/egg_sale_provider.dart';
+import '../services/sync_service.dart';
 import 'chicken_management_screen.dart';
 import 'feed_record_screen.dart';
 import 'cost_record_screen.dart';
@@ -20,6 +21,17 @@ class DataScreen extends ConsumerWidget {
     );
   }
 
+  Future<void> _refresh(WidgetRef ref) async {
+    await SyncService.syncAll();
+    await Future.wait([
+      ref.read(chickenManagementProvider.notifier).fetchManagements(),
+      ref.read(feedRecordProvider.notifier).fetchRecords(),
+      ref.read(costRecordProvider.notifier).fetchRecords(),
+      ref.read(eggSaleProvider.notifier).fetchSales(),
+    ]);
+    ref.invalidate(pendingCountProvider);
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final chickenCount = ref.watch(
@@ -34,24 +46,38 @@ class DataScreen extends ConsumerWidget {
     final saleCount = ref.watch(
       eggSaleProvider.select((s) => s.sales.length),
     );
+    final pending = ref.watch(pendingCountProvider);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Data'),
       ),
       body: RefreshIndicator(
-        onRefresh: () async {
-          await Future.wait([
-            ref.read(chickenManagementProvider.notifier).fetchManagements(),
-            ref.read(feedRecordProvider.notifier).fetchRecords(),
-            ref.read(costRecordProvider.notifier).fetchRecords(),
-            ref.read(eggSaleProvider.notifier).fetchSales(),
-          ]);
-        },
+        onRefresh: () => _refresh(ref),
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(16),
           children: [
+            pending.when(
+              data: (count) => count > 0
+                  ? _PendingBanner(
+                      count: count,
+                      onSync: () async {
+                        await _refresh(ref);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Sinkronisasi selesai'),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
+                        }
+                      },
+                    )
+                  : const SizedBox.shrink(),
+              loading: () => const SizedBox.shrink(),
+              error: (_, __) => const SizedBox.shrink(),
+            ),
             Text(
               'Pilih jenis data yang ingin dikelola',
               style: Theme.of(context)
@@ -101,6 +127,42 @@ class DataScreen extends ConsumerWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _PendingBanner extends StatelessWidget {
+  const _PendingBanner({required this.count, required this.onSync});
+
+  final int count;
+  final VoidCallback onSync;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.orange.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.orange.withOpacity(0.4)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.cloud_off, color: Colors.orange),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              '$count data belum terkirim ke server',
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
+          TextButton(
+            onPressed: onSync,
+            child: const Text('Kirim'),
+          ),
+        ],
       ),
     );
   }

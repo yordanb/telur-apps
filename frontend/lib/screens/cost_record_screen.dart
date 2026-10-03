@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../providers/cost_record_provider.dart';
+import '../services/sync_service.dart';
+import '../widgets/offline_chip.dart';
 import '../providers/auth_provider.dart';
 import '../models/cost_record.dart';
 
@@ -92,11 +94,22 @@ class CostRecordScreen extends ConsumerWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  DateFormat('dd MMMM yyyy').format(record.date),
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                Row(
+                  children: [
+                    Text(
+                      DateFormat('dd MMMM yyyy').format(record.date),
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleMedium
+                          ?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                    if (SyncService.isTempId(record.id)) ...[
+                      const SizedBox(width: 8),
+                      const OfflineChip(),
+                    ],
+                  ],
                 ),
                 if (canEdit)
                   PopupMenuButton(
@@ -305,14 +318,28 @@ class CostRecordScreen extends ConsumerWidget {
                   createdAt: DateTime.now(),
                 );
 
-                final success = await ref.read(costRecordProvider.notifier).createRecord(record);
+                final result = await ref.read(costRecordProvider.notifier).createRecord(record);
 
                 if (dialogContext.mounted) {
                   Navigator.pop(dialogContext);
+                  final (message, color) = switch (result) {
+                    SaveResult.synced => (
+                        'Data berhasil ditambahkan',
+                        Colors.green
+                      ),
+                    SaveResult.queued => (
+                        'Disimpan offline — otomatis dikirim saat online',
+                        Colors.orange
+                      ),
+                    SaveResult.failed => (
+                        'Gagal menambahkan data',
+                        Colors.red
+                      ),
+                  };
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text(success ? 'Data berhasil ditambahkan' : 'Gagal menambahkan data'),
-                      backgroundColor: success ? Colors.green : Colors.red,
+                      content: Text(message),
+                      backgroundColor: color,
                     ),
                   );
                 }

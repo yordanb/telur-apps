@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../providers/chicken_management_provider.dart';
+import '../services/sync_service.dart';
+import '../widgets/offline_chip.dart';
 import '../providers/auth_provider.dart';
 import '../models/chicken_management.dart';
 
@@ -84,12 +86,20 @@ class ChickenManagementScreen extends ConsumerWidget {
         padding: const EdgeInsets.all(16),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            Text(
-              DateFormat('dd MMMM yyyy').format(management.date),
-              style: Theme.of(context)
-                  .textTheme
-                  .titleMedium
-                  ?.copyWith(fontWeight: FontWeight.bold),
+            Row(
+              children: [
+                Text(
+                  DateFormat('dd MMMM yyyy').format(management.date),
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleMedium
+                      ?.copyWith(fontWeight: FontWeight.bold),
+                ),
+                if (SyncService.isTempId(management.id)) ...[
+                  const SizedBox(width: 8),
+                  const OfflineChip(),
+                ],
+              ],
             ),
             if (canEdit)
               PopupMenuButton(
@@ -253,16 +263,28 @@ class ChickenManagementScreen extends ConsumerWidget {
                 notes: notesC.text.isEmpty ? null : notesC.text,
                 createdAt: DateTime.now(),
               );
-              final success = await ref
+              final result = await ref
                   .read(chickenManagementProvider.notifier)
                   .createManagement(management);
               if (dc.mounted) {
                 Navigator.pop(dc);
+                final (message, color) = switch (result) {
+                  SaveResult.synced => (
+                      'Data berhasil ditambahkan',
+                      Colors.green
+                    ),
+                  SaveResult.queued => (
+                      'Disimpan offline — otomatis dikirim saat online',
+                      Colors.orange
+                    ),
+                  SaveResult.failed => (
+                      'Gagal menambahkan data',
+                      Colors.red
+                    ),
+                };
                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: Text(success
-                      ? 'Data berhasil ditambahkan'
-                      : 'Gagal menambahkan data'),
-                  backgroundColor: success ? Colors.green : Colors.red,
+                  content: Text(message),
+                  backgroundColor: color,
                 ));
               }
             },

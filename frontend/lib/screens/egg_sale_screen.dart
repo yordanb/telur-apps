@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../providers/egg_sale_provider.dart';
+import '../services/sync_service.dart';
+import '../widgets/offline_chip.dart';
 import '../providers/auth_provider.dart';
 import '../models/egg_sale.dart';
 
@@ -137,11 +139,22 @@ class EggSaleScreen extends ConsumerWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  DateFormat('dd MMMM yyyy').format(sale.date),
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                Row(
+                  children: [
+                    Text(
+                      DateFormat('dd MMMM yyyy').format(sale.date),
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleMedium
+                          ?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                    if (SyncService.isTempId(sale.id)) ...[
+                      const SizedBox(width: 8),
+                      const OfflineChip(),
+                    ],
+                  ],
                 ),
                 if (canEdit)
                   PopupMenuButton(
@@ -303,17 +316,26 @@ class EggSaleScreen extends ConsumerWidget {
               createdAt: DateTime.now(),
             );
 
-            final success = await ref
+            final result = await ref
                 .read(eggSaleProvider.notifier)
                 .createSale(sale);
 
             if (dialogContext.mounted) {
-              if (success) {
+              if (result != SaveResult.failed) {
                 Navigator.pop(dialogContext);
+                final (message, color) = result == SaveResult.synced
+                    ? (
+                        'Penjualan berhasil ditambahkan',
+                        Colors.green
+                      )
+                    : (
+                        'Disimpan offline — otomatis dikirim saat online',
+                        Colors.orange
+                      );
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Penjualan berhasil ditambahkan'),
-                    backgroundColor: Colors.green,
+                  SnackBar(
+                    content: Text(message),
+                    backgroundColor: color,
                   ),
                 );
               } else {
@@ -517,9 +539,13 @@ class EggSaleScreen extends ConsumerWidget {
               if (success) {
                 Navigator.pop(dialogContext);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Penjualan berhasil diperbarui'),
-                    backgroundColor: Colors.green,
+                  SnackBar(
+                    content: Text(SyncService.isTempId(sale.id)
+                        ? 'Perubahan disimpan offline'
+                        : 'Penjualan berhasil diperbarui'),
+                    backgroundColor: SyncService.isTempId(sale.id)
+                        ? Colors.orange
+                        : Colors.green,
                   ),
                 );
               } else {
