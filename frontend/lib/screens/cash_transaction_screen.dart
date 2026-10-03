@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/responsive.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../providers/cash_transaction_provider.dart';
@@ -47,7 +48,7 @@ class _CashTransactionScreenState
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            padding: ResponsiveInsets.only(context, left: 16, top: 12, right: 16),
             child: Row(
               children: [
                 _FilterChip(
@@ -127,7 +128,7 @@ class _CashTransactionScreenState
       onRefresh: () =>
           ref.read(cashTransactionProvider.notifier).fetchTransactions(),
       child: ListView.builder(
-        padding: const EdgeInsets.all(16),
+        padding: ResponsiveInsets.all(context, 16),
         itemCount: items.length,
         itemBuilder: (context, index) {
           return _buildTxCard(context, items[index]);
@@ -146,7 +147,7 @@ class _CashTransactionScreenState
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: ResponsiveInsets.all(context, 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

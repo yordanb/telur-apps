@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/responsive.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../providers/egg_sale_provider.dart';
@@ -32,7 +33,7 @@ class EggSaleScreen extends ConsumerWidget {
             Container(
               width: double.infinity,
               margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-              padding: const EdgeInsets.all(16),
+              padding: ResponsiveInsets.all(context, 16),
               decoration: BoxDecoration(
                 color: saleColor.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
@@ -114,7 +115,7 @@ class EggSaleScreen extends ConsumerWidget {
     return RefreshIndicator(
       onRefresh: () => ref.read(eggSaleProvider.notifier).fetchSales(),
       child: ListView.builder(
-        padding: const EdgeInsets.all(16),
+        padding: ResponsiveInsets.all(context, 16),
         itemCount: state.sales.length,
         itemBuilder: (context, index) {
           final sale = state.sales[index];
@@ -132,7 +133,7 @@ class EggSaleScreen extends ConsumerWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: ResponsiveInsets.all(context, 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

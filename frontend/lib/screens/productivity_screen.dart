@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/responsive.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../providers/egg_production_provider.dart';
@@ -91,7 +92,7 @@ class _ProductivityScreenState
         },
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(16),
+          padding: ResponsiveInsets.all(context, 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

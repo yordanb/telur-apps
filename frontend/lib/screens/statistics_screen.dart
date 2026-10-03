@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/responsive.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
@@ -34,7 +35,7 @@ class StatisticsScreen extends ConsumerWidget {
         onRefresh: () => _loadData(ref),
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(16),
+          padding: ResponsiveInsets.all(context, 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -64,7 +65,7 @@ class StatisticsScreen extends ConsumerWidget {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: ResponsiveInsets.all(context, 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -167,7 +168,7 @@ class StatisticsScreen extends ConsumerWidget {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: ResponsiveInsets.all(context, 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -260,7 +261,7 @@ class StatisticsScreen extends ConsumerWidget {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: ResponsiveInsets.all(context, 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -363,7 +364,7 @@ class StatisticsScreen extends ConsumerWidget {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: ResponsiveInsets.all(context, 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -505,7 +506,7 @@ class StatisticsScreen extends ConsumerWidget {
         GridView.count(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          crossAxisCount: 2,
+          crossAxisCount: ResponsiveGrid.columns(context),
           crossAxisSpacing: 12,
           mainAxisSpacing: 12,
           children: [
@@ -567,7 +568,7 @@ class StatisticsScreen extends ConsumerWidget {
   }) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: ResponsiveInsets.all(context, 16),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -597,7 +598,7 @@ class StatisticsScreen extends ConsumerWidget {
   Widget _buildEmptyChart(BuildContext context, String title) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: ResponsiveInsets.all(context, 16),
         child: Column(
           children: [
             Text(

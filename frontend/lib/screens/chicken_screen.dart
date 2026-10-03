@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/responsive.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
@@ -37,7 +38,7 @@ class _ChickenScreenState extends ConsumerState<ChickenScreen> {
         children: [
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            padding: ResponsiveInsets.only(context, left: 16, top: 12, right: 16),
             child: Row(
               children: [
                 _FilterChip(
@@ -111,7 +112,7 @@ class _ChickenScreenState extends ConsumerState<ChickenScreen> {
       onRefresh: () =>
           ref.read(chickenProvider.notifier).fetchChickens(),
       child: ListView.builder(
-        padding: const EdgeInsets.all(16),
+        padding: ResponsiveInsets.all(context, 16),
         itemCount: items.length,
         itemBuilder: (context, index) => _buildCard(context, items[index]),
       ),
@@ -126,7 +127,7 @@ class _ChickenScreenState extends ConsumerState<ChickenScreen> {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: ResponsiveInsets.all(context, 16),
         child: Row(
           children: [
             CircleAvatar(

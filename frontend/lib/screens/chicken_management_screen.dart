@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/responsive.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../providers/chicken_management_provider.dart';
@@ -65,7 +66,7 @@ class ChickenManagementScreen extends ConsumerWidget {
       onRefresh: () =>
           ref.read(chickenManagementProvider.notifier).fetchManagements(),
       child: ListView.builder(
-        padding: const EdgeInsets.all(16),
+        padding: ResponsiveInsets.all(context, 16),
         itemCount: state.managements.length,
         itemBuilder: (context, index) {
           final management = state.managements[index];
@@ -83,7 +84,7 @@ class ChickenManagementScreen extends ConsumerWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: ResponsiveInsets.all(context, 16),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             Row(

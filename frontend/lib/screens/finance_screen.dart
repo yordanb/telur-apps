@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/responsive.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
@@ -95,7 +96,7 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
         onRefresh: _loadData,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(16),
+          padding: ResponsiveInsets.all(context, 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -222,7 +223,7 @@ class _BalanceCard extends StatelessWidget {
     final balanceColor = balance >= 0 ? Colors.green[700]! : Colors.red[700]!;
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: ResponsiveInsets.all(context, 16),
         child: Column(
           children: [
             const Text('Saldo Periode Ini',
@@ -367,7 +368,7 @@ class _CashFlowChart extends StatelessWidget {
     if (incomes.every((v) => v == 0) && expenses.every((v) => v == 0)) {
       return Card(
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: ResponsiveInsets.all(context, 16),
           child: Column(
             children: [
               Text('Arus Kas',
@@ -391,7 +392,7 @@ class _CashFlowChart extends StatelessWidget {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: ResponsiveInsets.all(context, 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -545,7 +546,7 @@ class _BreakdownCard extends StatelessWidget {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: ResponsiveInsets.all(context, 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
+import '../widgets/responsive.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../providers/auth_provider.dart';
@@ -169,7 +170,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         onRefresh: () async => _loadData(),
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(16),
+          padding: ResponsiveInsets.all(context, 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

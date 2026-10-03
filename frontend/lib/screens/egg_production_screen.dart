@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/responsive.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../providers/egg_production_provider.dart';
@@ -74,7 +75,7 @@ class EggProductionScreen extends ConsumerWidget {
       onRefresh: () =>
           ref.read(eggProductionProvider.notifier).fetchProductions(),
       child: ListView.builder(
-        padding: const EdgeInsets.all(16),
+        padding: ResponsiveInsets.all(context, 16),
         itemCount: state.productions.length,
         itemBuilder: (context, index) {
           final production = state.productions[index];
@@ -92,7 +93,7 @@ class EggProductionScreen extends ConsumerWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: ResponsiveInsets.all(context, 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

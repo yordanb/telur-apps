@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/responsive.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../providers/auth_provider.dart';
@@ -104,13 +105,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         title: const Text('Pengaturan'),
       ),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: ResponsiveInsets.all(context, 16),
         children: [
           // ============ Profil ============
           _SectionLabel('Profil'),
           Card(
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: ResponsiveInsets.all(context, 16),
               child: Row(
                 children: [
                   CircleAvatar(
@@ -195,7 +196,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           _SectionLabel('Tema Aplikasi'),
           Card(
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: ResponsiveInsets.all(context, 16),
               child: Row(
                 children: [
                   for (int i = 0; i < themeColorOptions.length; i++) ...[

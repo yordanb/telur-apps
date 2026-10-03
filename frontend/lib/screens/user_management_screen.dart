@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import '../widgets/responsive.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/api_service.dart';
 import '../models/user.dart';
@@ -54,7 +55,7 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
           : RefreshIndicator(
               onRefresh: _fetchUsers,
               child: ListView.builder(
-                padding: const EdgeInsets.all(16),
+                padding: ResponsiveInsets.all(context, 16),
                 itemCount: _users.length,
                 itemBuilder: (context, index) {
                   final user = _users[index];

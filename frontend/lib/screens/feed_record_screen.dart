@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/responsive.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../providers/feed_record_provider.dart';
@@ -69,7 +70,7 @@ class FeedRecordScreen extends ConsumerWidget {
     return RefreshIndicator(
       onRefresh: () => ref.read(feedRecordProvider.notifier).fetchRecords(),
       child: ListView.builder(
-        padding: const EdgeInsets.all(16),
+        padding: ResponsiveInsets.all(context, 16),
         itemCount: state.records.length,
         itemBuilder: (context, index) {
           final record = state.records[index];
@@ -87,7 +88,7 @@ class FeedRecordScreen extends ConsumerWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: ResponsiveInsets.all(context, 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

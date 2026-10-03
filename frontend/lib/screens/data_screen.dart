@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/responsive.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/chicken_management_provider.dart';
 import '../providers/feed_record_provider.dart';
@@ -69,7 +70,7 @@ class DataScreen extends ConsumerWidget {
         onRefresh: () => _refresh(ref),
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(16),
+          padding: ResponsiveInsets.all(context, 16),
           children: [
             pending.when(
               data: (count) => count > 0
@@ -237,7 +238,7 @@ class _DataCard extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: ResponsiveInsets.all(context, 16),
           child: Row(
             children: [
               Container(
