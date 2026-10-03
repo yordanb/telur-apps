@@ -6,6 +6,15 @@ class ApiService {
   // API Backend URL
   static const String baseUrl = 'https://egg.mibt.my.id/api';
 
+  /// Root server (untuk file statis seperti foto: /uploads/xxx).
+  static const String serverRoot = 'https://egg.mibt.my.id';
+
+  /// URL penuh foto dari photo_path backend (mis. 'uploads/abc.jpg').
+  static String photoUrl(String? path) {
+    if (path == null || path.isEmpty) return '';
+    return '$serverRoot/$path';
+  }
+
   /// Batas tunggu tiap request — tanpa ini request yang macet (mis. DNS
   /// emulator rusak) membuat spinner berputar selamanya tanpa pesan error.
   static const Duration requestTimeout = Duration(seconds: 20);
@@ -77,6 +86,22 @@ class ApiService {
         )
         .timeout(requestTimeout);
     return response;
+  }
+
+  /// Upload satu file foto (multipart) ke endpoint, mis. '/chickens/1/photo'.
+  static Future<http.Response> uploadPhoto(
+      String endpoint, String filePath) async {
+    final token = await getToken();
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse('$baseUrl$endpoint'),
+    );
+    if (token != null) {
+      request.headers['Authorization'] = 'Bearer $token';
+    }
+    request.files.add(await http.MultipartFile.fromPath('photo', filePath));
+    final streamed = await request.send().timeout(requestTimeout);
+    return http.Response.fromStream(streamed);
   }
 
   static dynamic handleResponse(http.Response response) {

@@ -10,6 +10,9 @@ services:
       - ALGORITHM=${ALGORITHM}
       - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}
       - DEBUG=${DEBUG}
+      - UPLOAD_DIR=/app/uploads
+    volumes:
+      - uploads:/app/uploads
     depends_on:
       - db
     restart: unless-stopped
@@ -45,12 +48,15 @@ services:
       - PGPASSWORD=${POSTGRES_PASSWORD}
     volumes:
       - ./backups:/backups
+      - uploads:/uploads:ro
     entrypoint: ["/bin/sh", "-c"]
     command:
       - |
         mkdir -p /backups
+        last_uploads_day=""
         while true; do
           ts=$$(date +%Y%m%d_%H%M%S)
+          today=$$(date +%Y%m%d)
           ok=""
           for i in $$(seq 1 60); do
             if pg_dump -h db -U "$${POSTGRES_USER}" "$${POSTGRES_DB}" > /tmp/dump.sql 2>/dev/null; then
@@ -65,7 +71,18 @@ services:
             echo "[backup] FAILED $${ts}"
             rm -f /tmp/dump.sql /tmp/dump.sql.gz
           fi
+          # Arsip foto ayam 1x sehari (di luar pg_dump).
+          if [ "$${today}" != "$${last_uploads_day}" ]; then
+            if tar -czf "/backups/uploads_$${today}.tar.gz" -C /uploads . 2>/dev/null; then
+              echo "[backup] uploads_$${today}.tar.gz OK"
+              last_uploads_day="$${today}"
+            else
+              echo "[backup] uploads FAILED $${today}"
+              rm -f "/backups/uploads_$${today}.tar.gz"
+            fi
+          fi
           find /backups -name 'egg_*.sql.gz' -mtime +14 -delete
+          find /backups -name 'uploads_*.tar.gz' -mtime +14 -delete
           sleep 21600
         done
     restart: unless-stopped
@@ -78,3 +95,4 @@ networks:
 
 volumes:
   postgres_data:
+  uploads:

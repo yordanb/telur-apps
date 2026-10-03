@@ -10,6 +10,7 @@ import '../providers/feed_record_provider.dart';
 import '../providers/cost_record_provider.dart';
 import '../providers/egg_sale_provider.dart';
 import '../providers/cash_transaction_provider.dart';
+import '../providers/chicken_provider.dart';
 import '../services/sync_service.dart';
 import 'egg_production_screen.dart';
 import 'chicken_management_screen.dart';
@@ -69,6 +70,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         ref.read(costRecordProvider.notifier).fetchRecords(),
         ref.read(eggSaleProvider.notifier).fetchSales(),
         ref.read(cashTransactionProvider.notifier).fetchTransactions(),
+        ref.read(chickenProvider.notifier).fetchChickens(),
       ]);
       ref.invalidate(pendingCountProvider);
       if (mounted && report.synced > 0) {

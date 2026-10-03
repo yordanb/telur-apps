@@ -1,9 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
+import os
 from app.config import get_settings
 from app.database import engine, Base
-from app.routers import auth, egg_production, chicken_management, feed_records, cost_records, egg_sales, cash_transactions, statistics, user_management
+from app.routers import auth, egg_production, chicken_management, feed_records, cost_records, egg_sales, cash_transactions, chickens, statistics, user_management
 
 settings = get_settings()
 
@@ -57,6 +59,11 @@ app = FastAPI(
     version="1.0.0"
 )
 
+# Foto ayam: disajikan dari direktori uploads (volume persisten).
+UPLOAD_DIR = os.environ.get("UPLOAD_DIR", "/app/uploads")
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
+
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
@@ -74,6 +81,7 @@ app.include_router(feed_records.router)
 app.include_router(cost_records.router)
 app.include_router(egg_sales.router)
 app.include_router(cash_transactions.router)
+app.include_router(chickens.router)
 app.include_router(statistics.router)
 app.include_router(user_management.router)
 

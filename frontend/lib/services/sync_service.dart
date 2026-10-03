@@ -89,6 +89,11 @@ const _queues = [
     '/cash-transactions/',
     {'date', 'direction', 'category', 'description', 'amount', 'notes'},
   ),
+  _QueueConfig(
+    LocalStorageService.chickenQueueKey,
+    '/chickens/',
+    {'code', 'name', 'breed', 'acquired_date', 'status', 'notes'},
+  ),
 ];
 
 class SyncService {

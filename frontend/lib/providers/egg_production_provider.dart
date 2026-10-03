@@ -81,6 +81,15 @@ class EggProductionNotifier extends Notifier<EggProductionState> {
         'notes': p.notes,
         'created_at': p.createdAt.toIso8601String(),
         'updated_at': p.updatedAt?.toIso8601String(),
+        'details': p.details
+            .map((d) => {
+                  'id': d.id,
+                  'chicken_id': d.chickenId,
+                  'eggs': d.eggs,
+                  'chicken_code': d.chickenCode,
+                  'chicken_name': d.chickenName,
+                })
+            .toList(),
       };
 
   Future<SaveResult> createProduction(EggProduction production) async {

@@ -41,6 +41,7 @@ class User(Base):
     cost_records = relationship("CostRecord", back_populates="user")
     egg_sales = relationship("EggSale", back_populates="user")
     cash_transactions = relationship("CashTransaction", back_populates="user")
+    chickens = relationship("Chicken", back_populates="user")
 
 
 class EggProduction(Base):
@@ -59,6 +60,11 @@ class EggProduction(Base):
 
     # Relationships
     user = relationship("User", back_populates="egg_productions")
+    details = relationship(
+        "EggProductionDetail",
+        back_populates="production",
+        cascade="all, delete-orphan",
+    )
 
 
 class ChickenManagement(Base):
@@ -132,6 +138,53 @@ class CashTransaction(Base):
 
     # Relationships
     user = relationship("User", back_populates="cash_transactions")
+
+
+class Chicken(Base):
+    """Register ayam per ekor. Status: aktif | sakit | mati | terjual."""
+
+    __tablename__ = "chickens"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    code = Column(String(50), unique=True, index=True, nullable=False)
+    name = Column(String(100), nullable=True)
+    breed = Column(String(100), nullable=True)
+    acquired_date = Column(DateTime(timezone=True), nullable=True)
+    status = Column(String(20), nullable=False, default="aktif")
+    photo_path = Column(String(255), nullable=True)  # relatif thd /uploads
+    notes = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    # Relationships
+    user = relationship("User", back_populates="chickens")
+    production_details = relationship(
+        "EggProductionDetail",
+        back_populates="chicken",
+        cascade="all, delete-orphan",
+    )
+
+
+class EggProductionDetail(Base):
+    """Rincian telur per ekor ayam dalam satu catatan produksi harian."""
+
+    __tablename__ = "egg_production_details"
+
+    id = Column(Integer, primary_key=True, index=True)
+    production_id = Column(
+        Integer, ForeignKey("egg_productions.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    chicken_id = Column(
+        Integer, ForeignKey("chickens.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    eggs = Column(Integer, nullable=False)  # butir baik dari ayam ini
+
+    # Relationships
+    production = relationship("EggProduction", back_populates="details")
+    chicken = relationship("Chicken", back_populates="production_details")
 
 
 class EggSale(Base):

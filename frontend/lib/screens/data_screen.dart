@@ -5,12 +5,15 @@ import '../providers/feed_record_provider.dart';
 import '../providers/cost_record_provider.dart';
 import '../providers/egg_sale_provider.dart';
 import '../providers/cash_transaction_provider.dart';
+import '../providers/chicken_provider.dart';
 import '../services/sync_service.dart';
 import 'chicken_management_screen.dart';
 import 'feed_record_screen.dart';
 import 'cost_record_screen.dart';
 import 'egg_sale_screen.dart';
 import 'finance_screen.dart';
+import 'chicken_screen.dart';
+import 'productivity_screen.dart';
 
 /// Tab "Data" — hub berisi 3 catatan sekunder:
 /// Ayam, Pakan, dan Biaya. Masing-masing dibuka sebagai layar penuh (push).
@@ -31,6 +34,7 @@ class DataScreen extends ConsumerWidget {
       ref.read(costRecordProvider.notifier).fetchRecords(),
       ref.read(eggSaleProvider.notifier).fetchSales(),
       ref.read(cashTransactionProvider.notifier).fetchTransactions(),
+      ref.read(chickenProvider.notifier).fetchChickens(),
     ]);
     ref.invalidate(pendingCountProvider);
   }
@@ -51,6 +55,9 @@ class DataScreen extends ConsumerWidget {
     );
     final cashCount = ref.watch(
       cashTransactionProvider.select((s) => s.transactions.length),
+    );
+    final registryCount = ref.watch(
+      chickenProvider.select((s) => s.chickens.length),
     );
     final pending = ref.watch(pendingCountProvider);
 
@@ -140,6 +147,26 @@ class DataScreen extends ConsumerWidget {
               count: cashCount,
               countLabel: 'transaksi kas',
               onTap: () => _open(context, const FinanceScreen()),
+            ),
+            const SizedBox(height: 12),
+            _DataCard(
+              icon: Icons.badge,
+              color: Colors.deepOrange,
+              title: 'Register Ayam',
+              subtitle: 'Identitas per ekor + foto profil',
+              count: registryCount,
+              countLabel: 'ekor',
+              onTap: () => _open(context, const ChickenScreen()),
+            ),
+            const SizedBox(height: 12),
+            _DataCard(
+              icon: Icons.trending_up,
+              color: Colors.purple,
+              title: 'Produktivitas Ayam',
+              subtitle: 'Telur/ekor/hari, laying rate, peringkat',
+              count: registryCount,
+              countLabel: 'ekor',
+              onTap: () => _open(context, const ProductivityScreen()),
             ),
           ],
         ),

@@ -57,7 +57,9 @@ class EggProductionBase(BaseModel):
 
 
 class EggProductionCreate(EggProductionBase):
-    pass
+    # Rincian per ekor (opsional). Jika diisi, total_eggs & good_eggs
+    # dihitung server dari jumlah rincian.
+    details: List[EggProductionDetailCreate] = []
 
 
 class EggProductionUpdate(BaseModel):
@@ -67,6 +69,9 @@ class EggProductionUpdate(BaseModel):
     bad_eggs: Optional[int] = None
     weight_avg: Optional[float] = None
     notes: Optional[str] = None
+    # Jika disertakan, seluruh rincian lama diganti dengan yang baru
+    # dan total dihitung ulang dari rincian.
+    details: Optional[List[EggProductionDetailCreate]] = None
 
 
 class EggProductionResponse(EggProductionBase):
@@ -74,6 +79,7 @@ class EggProductionResponse(EggProductionBase):
     user_id: int
     created_at: datetime
     updated_at: Optional[datetime] = None
+    details: List[EggProductionDetailResponse] = []
 
     class Config:
         from_attributes = True
@@ -241,6 +247,57 @@ class CashTransactionResponse(CashTransactionBase):
     user_id: int
     created_at: datetime
     updated_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+# ============== Chicken Schemas ==============
+class ChickenBase(BaseModel):
+    code: str
+    name: Optional[str] = None
+    breed: Optional[str] = None
+    acquired_date: Optional[datetime] = None
+    status: str = "aktif"
+    notes: Optional[str] = None
+
+
+class ChickenCreate(ChickenBase):
+    pass
+
+
+class ChickenUpdate(BaseModel):
+    code: Optional[str] = None
+    name: Optional[str] = None
+    breed: Optional[str] = None
+    acquired_date: Optional[datetime] = None
+    status: Optional[str] = None
+    notes: Optional[str] = None
+
+
+class ChickenResponse(ChickenBase):
+    id: int
+    user_id: int
+    photo_path: Optional[str] = None
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+# ============== Egg Production Detail Schemas ==============
+class EggProductionDetailCreate(BaseModel):
+    chicken_id: int
+    eggs: int
+
+
+class EggProductionDetailResponse(BaseModel):
+    id: int
+    chicken_id: int
+    eggs: int
+    chicken_code: str = ""
+    chicken_name: Optional[str] = None
 
     class Config:
         from_attributes = True
