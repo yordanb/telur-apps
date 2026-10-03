@@ -46,6 +46,24 @@ class TokenData(BaseModel):
     username: Optional[str] = None
 
 
+# ============== Egg Production Detail Schemas ==============
+# (Didefinisikan sebelum EggProduction agar bisa dirujuk.)
+class EggProductionDetailCreate(BaseModel):
+    chicken_id: int
+    eggs: int
+
+
+class EggProductionDetailResponse(BaseModel):
+    id: int
+    chicken_id: int
+    eggs: int
+    chicken_code: str = ""
+    chicken_name: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
 # ============== Egg Production Schemas ==============
 class EggProductionBase(BaseModel):
     date: datetime
@@ -281,23 +299,6 @@ class ChickenResponse(ChickenBase):
     photo_path: Optional[str] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
-
-    class Config:
-        from_attributes = True
-
-
-# ============== Egg Production Detail Schemas ==============
-class EggProductionDetailCreate(BaseModel):
-    chicken_id: int
-    eggs: int
-
-
-class EggProductionDetailResponse(BaseModel):
-    id: int
-    chicken_id: int
-    eggs: int
-    chicken_code: str = ""
-    chicken_name: Optional[str] = None
 
     class Config:
         from_attributes = True
