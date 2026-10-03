@@ -74,7 +74,6 @@ class AuthNotifier extends Notifier<AuthState> {
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
         body: {'username': username.trim(), 'password': password},
       ).timeout(ApiService.requestTimeout);
-      print('Login response: ${response.statusCode} - ${response.body}');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
