@@ -75,14 +75,8 @@ def _resolve_details(
                 status_code=404,
                 detail=f"Ayam id={item.chicken_id} tidak terdaftar",
             )
-        if (
-            not can_view_all_data(current_user)
-            and chicken.user_id != current_user.id
-        ):
-            raise HTTPException(
-                status_code=403,
-                detail="Not authorized to use this chicken",
-            )
+        # Ayam milik kandang bersama: editor mana pun boleh memakai
+        # ayam mana pun di rincian produksi.
         total += item.eggs
     return total
 

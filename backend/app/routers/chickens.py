@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from app.database import get_db
-from app.auth import get_current_active_user, require_editor, can_view_all_data
+from app.auth import get_current_active_user, require_editor
 from app.models import User, Chicken
 from app.schemas import ChickenCreate, ChickenUpdate, ChickenResponse
 
@@ -24,11 +24,18 @@ def _check_status(value: Optional[str]):
         )
 
 
-def _check_owner(chicken: Chicken, current_user: User, action: str):
-    if not can_view_all_data(current_user) and chicken.user_id != current_user.id:
+def _check_can_delete(chicken: Chicken, current_user: User):
+    """Hapus hanya boleh pemilik yang mendaftarkan atau admin.
+
+    Ayam adalah aset kandang bersama: seluruh user login boleh melihat
+    dan memakai semua ayam (mis. di rincian produksi) serta mengubah
+    data/foto/statusnya. Investor sudah dicegat require_editor.
+    """
+    is_admin = current_user.role.value == "admin"
+    if not is_admin and chicken.user_id != current_user.id:
         raise HTTPException(
             status_code=403,
-            detail=f"Not authorized to {action} this chicken",
+            detail="Not authorized to delete this chicken",
         )
 
 
@@ -59,10 +66,8 @@ def get_chickens(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
+    # Register ayam milik kandang bersama: semua user login melihat semua ayam.
     query = db.query(Chicken)
-
-    if not can_view_all_data(current_user):
-        query = query.filter(Chicken.user_id == current_user.id)
 
     if status_filter:
         query = query.filter(Chicken.status == status_filter)
@@ -80,7 +85,6 @@ def get_chicken(
     if not chicken:
         raise HTTPException(status_code=404, detail="Chicken not found")
 
-    _check_owner(chicken, current_user, "access")
     return chicken
 
 
@@ -95,7 +99,7 @@ def update_chicken(
     if not chicken:
         raise HTTPException(status_code=404, detail="Chicken not found")
 
-    _check_owner(chicken, current_user, "update")
+    # Editor mana pun (pegawai/admin) boleh memperbarui data ayam.
     _check_status(chicken_update.status)
 
     update_data = chicken_update.dict(exclude_unset=True)
@@ -123,7 +127,7 @@ def delete_chicken(
     if not chicken:
         raise HTTPException(status_code=404, detail="Chicken not found")
 
-    _check_owner(chicken, current_user, "delete")
+    _check_can_delete(chicken, current_user)
 
     photo_path = chicken.photo_path
     db.delete(chicken)
@@ -146,7 +150,7 @@ async def upload_chicken_photo(
     if not chicken:
         raise HTTPException(status_code=404, detail="Chicken not found")
 
-    _check_owner(chicken, current_user, "update")
+    # Editor mana pun (pegawai/admin) boleh mengganti foto ayam.
 
     ext = os.path.splitext(photo.filename or "")[1].lower()
     if ext not in ALLOWED_EXTENSIONS:
