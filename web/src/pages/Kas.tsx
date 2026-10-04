@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../lib/auth';
 import {
-  CASH_DIRECTIONS, CASH_IN_CATS, CASH_OUT_CATS, canWrite, createOne, deleteOne,
+  CASH_DIRECTIONS, CASH_IN_CATS, CASH_OUT_CATS, canWrite, checkRequired, createOne, deleteOne,
   fromLocalInput, nowLocalInput, toLocalInput, updateOne,
 } from '../lib/crud';
 import { fmtDate, fmtRp, toISODate } from '../lib/api';
@@ -68,6 +68,12 @@ export default function Kas() {
   async function onSave() {
     setSaving(true);
     setFormErr(null);
+    const missing = checkRequired([[form.description, 'Deskripsi']]);
+    if (missing || !(Number(form.amount) > 0)) {
+      setFormErr(missing ?? 'Jumlah harus lebih dari 0');
+      setSaving(false);
+      return;
+    }
     try {
       const body = {
         date: fromLocalInput(form.date),

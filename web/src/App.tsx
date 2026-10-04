@@ -1,20 +1,23 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
+import { Suspense, lazy } from 'react';
 import type { ReactNode } from 'react';
 import Layout from './components/Layout';
 import { useAuth } from './lib/auth';
 import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
-import Statistik from './pages/Statistik';
 import Produksi from './pages/Produksi';
 import Ayam from './pages/Ayam';
 import Pakan from './pages/Pakan';
 import Biaya from './pages/Biaya';
 import Penjualan from './pages/Penjualan';
 import Kas from './pages/Kas';
-import Keuangan from './pages/Keuangan';
-import Produktivitas from './pages/Produktivitas';
 import Pengguna from './pages/Pengguna';
 import Pengaturan from './pages/Pengaturan';
+
+// Halaman bergrafik dimuat malas agar bundle awal tetap kecil (recharts).
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Statistik = lazy(() => import('./pages/Statistik'));
+const Keuangan = lazy(() => import('./pages/Keuangan'));
+const Produktivitas = lazy(() => import('./pages/Produktivitas'));
 
 function RequireAuth({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
@@ -28,7 +31,11 @@ function RequireAuth({ children }: { children: ReactNode }) {
 function authed(el: ReactNode) {
   return (
     <RequireAuth>
-      <Layout>{el}</Layout>
+      <Layout>
+        <Suspense fallback={<div className="py-10 text-center text-gray-500">Memuat…</div>}>
+          {el}
+        </Suspense>
+      </Layout>
     </RequireAuth>
   );
 }

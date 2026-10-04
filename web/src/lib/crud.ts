@@ -117,6 +117,14 @@ export async function uploadPhoto<T>(path: string, file: File): Promise<T> {
   return parseBody<T>(res);
 }
 
+/** Validasi ringan form: kembalikan pesan error pertama, atau null jika OK. */
+export function checkRequired(fields: [value: string, label: string][]): string | null {
+  for (const [v, label] of fields) {
+    if (!v.trim()) return `${label} wajib diisi`;
+  }
+  return null;
+}
+
 /** Nilai untuk input datetime-local dari ISO backend. */
 export function toLocalInput(iso: string | null | undefined): string {
   if (!iso) return '';

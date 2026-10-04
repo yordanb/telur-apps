@@ -9,8 +9,8 @@
 Aplikasi pencatatan produksi telur ayam ("Endog"):
 - **Backend**: FastAPI + PostgreSQL 15 (Docker) — `backend/`
 - **Mobile**: Flutter Android (Riverpod + GoRouter) — `frontend/`
-- **Web dashboard** (baru, dikerjakan di tab terpisah): diusulkan folder `web/`
-  (stack belum diputuskan — tentukan di tab web, lalu tulis di sini).
+- **Web dashboard**: folder `web/` — stack diputuskan tab web:
+  **React + Vite + TypeScript + Tailwind** (§6).
 
 Repo: `https://github.com/yordanb/telur-apps.git`, branch utama `master`.
 
@@ -167,3 +167,8 @@ Hak akses wajib meniru mobile: investor read-only, Manajemen User admin only.
   (verifikasi password lama, min 6). Diuji lokal: compileall + impor
   router + unit logika (400 salah/pendek, sukses+hash). Perlu deploy
   backend juga: `git pull && cd backend && docker compose up -d --build`.
+- Web grafik + kualitas (2026-10-04): Recharts di Dashboard (produksi
+  14 hari), Statistik (tren telur + pendapatan), Keuangan (masuk vs
+  keluar); halaman grafik di-lazy-load agar bundle awal kecil.
+  Validasi form client-side (wajib isi, angka > 0, email, min password 6)
+  sebelum request; §1 dibersihkan (stack tercatat diputuskan).

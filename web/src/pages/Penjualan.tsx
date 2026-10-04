@@ -64,6 +64,16 @@ export default function Penjualan() {
   async function onSave() {
     setSaving(true);
     setFormErr(null);
+    if (!(Number(form.quantity) > 0)) {
+      setFormErr('Jumlah harus lebih dari 0');
+      setSaving(false);
+      return;
+    }
+    if (!(Number(form.price_per_unit) >= 0)) {
+      setFormErr('Harga tidak boleh negatif');
+      setSaving(false);
+      return;
+    }
     try {
       const body = {
         date: fromLocalInput(form.date),

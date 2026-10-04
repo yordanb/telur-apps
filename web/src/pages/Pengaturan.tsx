@@ -22,6 +22,14 @@ export default function Pengaturan() {
   async function onSaveProfile() {
     setProfileErr(null);
     setProfileMsg(null);
+    if (!name.trim()) {
+      setProfileErr('Nama wajib diisi');
+      return;
+    }
+    if (!email.includes('@')) {
+      setProfileErr('Email tidak valid');
+      return;
+    }
     setSavingProfile(true);
     try {
       await updateMe({ full_name: name.trim(), email: email.trim() });

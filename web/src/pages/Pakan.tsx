@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../lib/auth';
-import { canWrite, createOne, deleteOne, fromLocalInput, getOne, nowLocalInput, toLocalInput, updateOne } from '../lib/crud';
+import { canWrite, checkRequired, createOne, deleteOne, fromLocalInput, getOne, nowLocalInput, toLocalInput, updateOne } from '../lib/crud';
 import { fmtDate, toISODate } from '../lib/api';
 import { useList } from '../hooks/useList';
 import { Btn, ErrorBox, Field, FilterBar, Modal, PageHead, Pager, inputCls } from '../components/ui';
@@ -71,6 +71,12 @@ export default function Pakan() {
   async function onSave() {
     setSaving(true);
     setFormErr(null);
+    const missing = checkRequired([[form.feed_type, 'Jenis pakan']]);
+    if (missing || !(Number(form.quantity_kg) > 0)) {
+      setFormErr(missing ?? 'Jumlah harus lebih dari 0');
+      setSaving(false);
+      return;
+    }
     try {
       const body = {
         date: fromLocalInput(form.date),

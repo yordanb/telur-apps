@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../lib/auth';
 import {
-  COST_CATEGORIES, OP_SUBCATEGORIES, canWrite, createOne, deleteOne,
+  COST_CATEGORIES, OP_SUBCATEGORIES, canWrite, checkRequired, createOne, deleteOne,
   fromLocalInput, nowLocalInput, toLocalInput, updateOne,
 } from '../lib/crud';
 import { fmtDate, fmtRp, toISODate } from '../lib/api';
@@ -78,6 +78,29 @@ export default function Biaya() {
   async function onSave() {
     setSaving(true);
     setFormErr(null);
+    const missing = checkRequired([
+      [form.description, 'Deskripsi'],
+      ...(isPakan ? [[form.feed_type, 'Jenis pakan'] as [string, string]] : []),
+    ]);
+    const qty = Number(form.quantity_kg) || 0;
+    const price = Number(form.price_per_kg) || 0;
+    const amount = Number(form.amount) || 0;
+    const invalid =
+      missing ??
+      (isPakan
+        ? qty <= 0
+          ? 'Jumlah (kg) harus lebih dari 0'
+          : price <= 0
+            ? 'Harga/kg harus lebih dari 0'
+            : null
+        : amount <= 0
+          ? 'Jumlah (Rp) harus lebih dari 0'
+          : null);
+    if (invalid) {
+      setFormErr(invalid);
+      setSaving(false);
+      return;
+    }
     try {
       const body = {
         date: fromLocalInput(form.date),

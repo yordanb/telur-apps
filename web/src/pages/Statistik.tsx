@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
+  Bar, CartesianGrid, ComposedChart, Legend, Line,
+  ResponsiveContainer, Tooltip, XAxis, YAxis,
+} from 'recharts';
+import {
   MONTH_NAMES, fmtDate, fmtNum, fmtRp, getDailyStats, getMonthlyStats, toISODate,
 } from '../lib/api';
 import type { DailyStat, MonthlyStat } from '../lib/api';
@@ -37,6 +41,13 @@ export default function Statistik() {
 
   const t = (pick: (r: DailyStat) => number) => daily.reduce((a, r) => a + pick(r), 0);
 
+  const trendData = daily.map((r) => ({
+    t: new Date(r.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'numeric' }),
+    full: fmtDate(r.date),
+    telur: r.total_eggs,
+    pendapatan: r.sales_revenue,
+  }));
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-gray-900">📊 Statistik</h1>
@@ -68,6 +79,39 @@ export default function Statistik() {
         <p className="py-6 text-center text-gray-500">Memuat…</p>
       ) : (
         <>
+          <div className="rounded-2xl bg-white p-5 shadow">
+            <h2 className="font-semibold text-gray-900">Tren harian</h2>
+            {trendData.length === 0 ? (
+              <p className="mt-2 text-sm text-gray-500">Tidak ada data.</p>
+            ) : (
+              <div className="mt-4 h-60">
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart data={trendData} margin={{ top: 4, right: 0, bottom: 0, left: -8 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                    <XAxis dataKey="t" tick={{ fontSize: 11 }} interval="preserveStartEnd" />
+                    <YAxis yAxisId="telur" orientation="left" tick={{ fontSize: 11 }} allowDecimals={false} />
+                    <YAxis
+                      yAxisId="rp"
+                      orientation="right"
+                      tick={{ fontSize: 11 }}
+                      tickFormatter={(v: number) => (v >= 1000 ? `${Math.round(v / 1000)}rb` : `${v}`)}
+                    />
+                    <Tooltip
+                      labelFormatter={(_, payload) => payload?.[0]?.payload?.full ?? ''}
+                      formatter={(v, name) => [
+                        name === 'Telur' ? `${fmtNum(Number(v))} butir` : fmtRp(Number(v)),
+                        name,
+                      ]}
+                    />
+                    <Legend />
+                    <Bar yAxisId="telur" dataKey="telur" name="Telur" fill="#ea580c" radius={[4, 4, 0, 0]} />
+                    <Line yAxisId="rp" type="monotone" dataKey="pendapatan" name="Pendapatan" stroke="#16a34a" strokeWidth={2} dot={false} />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </div>
+
           <div className="overflow-x-auto rounded-2xl bg-white shadow">
             <table className="w-full min-w-[640px] text-sm">
               <thead>

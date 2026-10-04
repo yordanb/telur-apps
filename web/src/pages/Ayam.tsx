@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../lib/auth';
 import {
-  CHICKEN_STATUSES, canWrite, createOne, deleteOne, fileUrl,
+  CHICKEN_STATUSES, canWrite, checkRequired, createOne, deleteOne, fileUrl,
   fromLocalInput, isAdmin, nowLocalInput, toLocalInput, updateOne, uploadPhoto,
 } from '../lib/crud';
 import { fmtDate, toISODate } from '../lib/api';
@@ -101,6 +101,11 @@ function Register({ writable, userId, admin }: { writable: boolean; userId?: num
 
   async function onSave() {
     setFormErr(null);
+    const missing = checkRequired([[form.code, 'Kode ayam']]);
+    if (missing) {
+      setFormErr(missing);
+      return;
+    }
     setSaving(true);
     try {
       const body = {
@@ -305,6 +310,11 @@ function AgregatTab({ writable }: { writable: boolean }) {
   async function onSave() {
     setSaving(true);
     setFormErr(null);
+    if (!form.date) {
+      setFormErr('Tanggal wajib diisi');
+      setSaving(false);
+      return;
+    }
     try {
       const body = {
         date: fromLocalInput(form.date),

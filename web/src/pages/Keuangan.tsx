@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { fmtDate, fmtRp, toISODate } from '../lib/api';
 import { list } from '../lib/crud';
 import { ErrorBox, PageHead } from '../components/ui';
@@ -99,6 +100,28 @@ export default function Keuangan() {
     .sort((a, b) => (a.date < b.date ? 1 : -1))
     .slice(0, 10);
 
+  // Grafik harian masuk vs keluar; periode "Semua" diagregat per bulan.
+  const flowData = (() => {
+    const m = new Map<string, { masuk: number; keluar: number }>();
+    const bucket = (iso: string) => (days === 0 ? iso.slice(0, 7) : iso.slice(0, 10));
+    const add = (iso: string, masuk: number, keluar: number) => {
+      const k = bucket(iso);
+      const e = m.get(k) ?? { masuk: 0, keluar: 0 };
+      e.masuk += masuk;
+      e.keluar += keluar;
+      m.set(k, e);
+    };
+    for (const s of sales) add(s.date, s.total_price, 0);
+    for (const c of costs) add(c.date, 0, c.amount);
+    for (const t of cash) {
+      if (t.direction === 'masuk') add(t.date, t.amount, 0);
+      else add(t.date, 0, t.amount);
+    }
+    return [...m.entries()]
+      .sort((a, b) => (a[0] < b[0] ? -1 : 1))
+      .map(([k, v]) => ({ t: k, ...v }));
+  })();
+
   return (
     <div className="space-y-4">
       <PageHead title="💳 Keuangan" />
@@ -130,8 +153,28 @@ export default function Keuangan() {
             </div>
           </div>
 
-          <div className="grid gap-4 lg:grid-cols-2">
-            <div className="rounded-2xl bg-white p-5 shadow">
+          <div className="rounded-2xl bg-white p-5 shadow">
+            <h2 className="font-semibold text-gray-900">Arus masuk vs keluar</h2>
+            {flowData.length === 0 ? (
+              <p className="mt-2 text-sm text-gray-500">Belum ada data.</p>
+            ) : (
+              <div className="mt-4 h-56">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={flowData} margin={{ top: 4, right: 4, bottom: 0, left: 8 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                    <XAxis dataKey="t" tick={{ fontSize: 11 }} interval="preserveStartEnd" />
+                    <YAxis tick={{ fontSize: 11 }} tickFormatter={(v: number) => (v >= 1000 ? `${Math.round(v / 1000)}rb` : `${v}`)} />
+                    <Tooltip formatter={(v, name) => [fmtRp(Number(v)), name === 'masuk' ? 'Masuk' : 'Keluar']} />
+                    <Legend />
+                    <Bar dataKey="masuk" name="Masuk" fill="#16a34a" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="keluar" name="Keluar" fill="#dc2626" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </div>
+
+          <div className="grid gap-4 lg:grid-cols-2">            <div className="rounded-2xl bg-white p-5 shadow">
               <h2 className="font-semibold text-green-700">Rincian pemasukan</h2>
               <dl className="mt-2 space-y-1 text-sm">
                 <div className="flex justify-between"><dt>Penjualan telur</dt><dd className="font-medium">{fmtRp(incomeEgg)}</dd></div>

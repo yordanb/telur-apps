@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { useAuth } from '../lib/auth';
 import {
   fmtDate, fmtNum, fmtRp, getDailyStats, getMonthlyStats, toISODate,
@@ -46,7 +47,11 @@ export default function Dashboard() {
   const laba = totals.revenue - totals.feed - totals.other;
 
   const last14 = daily.slice(-14);
-  const maxEggs = Math.max(1, ...last14.map((r) => r.total_eggs));
+  const chartData = last14.map((r) => ({
+    t: new Date(r.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'numeric' }),
+    full: fmtDate(r.date),
+    telur: r.total_eggs,
+  }));
   const last7 = daily.slice(-7).reverse();
 
   if (loading) return <div className="py-10 text-center text-gray-500">Memuat dashboard…</div>;
@@ -96,21 +101,22 @@ export default function Dashboard() {
 
       <div className="rounded-2xl bg-white p-5 shadow">
         <h2 className="font-semibold text-gray-900">Produksi 14 hari terakhir</h2>
-        {last14.length === 0 ? (
+        {chartData.length === 0 ? (
           <p className="mt-2 text-sm text-gray-500">Belum ada data produksi.</p>
         ) : (
-          <div className="mt-4 flex h-32 items-end gap-1.5">
-            {last14.map((r) => (
-              <div key={r.date} className="flex flex-1 flex-col items-center gap-1" title={`${fmtDate(r.date)}: ${fmtNum(r.total_eggs)} butir`}>
-                <div
-                  className="w-full rounded-t bg-brand-500"
-                  style={{ height: `${Math.max(4, (r.total_eggs / maxEggs) * 110)}px` }}
+          <div className="mt-4 h-56">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData} margin={{ top: 4, right: 4, bottom: 0, left: -12 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="t" tick={{ fontSize: 11 }} interval="preserveStartEnd" />
+                <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
+                <Tooltip
+                  labelFormatter={(_, payload) => payload?.[0]?.payload?.full ?? ''}
+                  formatter={(v) => [`${fmtNum(Number(v))} butir`, 'Telur']}
                 />
-                <span className="text-[10px] text-gray-400">
-                  {new Date(r.date).getDate()}
-                </span>
-              </div>
-            ))}
+                <Bar dataKey="telur" name="Telur" fill="#ea580c" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         )}
       </div>

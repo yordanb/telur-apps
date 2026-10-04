@@ -97,6 +97,10 @@ export default function Produksi() {
 
   async function onSave() {
     setFormErr(null);
+    if (!form.date) {
+      setFormErr('Tanggal wajib diisi');
+      return;
+    }
     setSaving(true);
     try {
       const details = form.details

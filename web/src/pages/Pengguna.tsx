@@ -45,6 +45,16 @@ export default function Pengguna() {
   async function onCreate() {
     setSaving(true);
     setCreateErr(null);
+    if (!create.username.trim() || !create.full_name.trim() || !create.password) {
+      setCreateErr('Username, nama, dan password wajib diisi');
+      setSaving(false);
+      return;
+    }
+    if (!create.email.includes('@')) {
+      setCreateErr('Email tidak valid');
+      setSaving(false);
+      return;
+    }
     try {
       await createOne('/users/', {
         username: create.username.trim(),
