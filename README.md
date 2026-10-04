@@ -128,6 +128,9 @@ bersama); hapus ayam hanya pemilik/admin.
 | POST | `/api/auth/register` | Publik, selalu jadi pegawai (bootstrap admin jika DB kosong) |
 | GET/PUT | `/api/auth/me` | Profil / update profil |
 | PUT | `/api/auth/change-password` | Ganti password (`old_password`, `new_password` min 6) |
+| POST | `/api/auth/logout` | Logout (catat aktivitas, token dibuang di klien) |
+| GET | `/api/auth/client-ip` | IP klien (tanpa auth, untuk layar login) |
+| GET | `/api/activity-logs/` | Log aktivitas (admin only, filter tanggal/aksi/user) |
 | CRUD | `/api/egg-productions/` | + `details[]` per ayam; total dihitung server |
 | CRUD | `/api/chickens/` | Register ayam; `POST /{id}/photo` upload foto |
 | CRUD | `/api/feedings/` | Pemberian pakan (validasi stok); `GET /feedings/stock` sisa global |
