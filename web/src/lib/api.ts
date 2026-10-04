@@ -62,3 +62,74 @@ export async function fetchMe(): Promise<User> {
 export function logout() {
   clearToken();
 }
+
+// ---------- util ----------
+
+export const fmtNum = (n: number) => new Intl.NumberFormat('id-ID').format(n);
+
+export const fmtRp = (n: number) =>
+  'Rp' + new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 }).format(n);
+
+export const fmtDate = (iso: string) =>
+  new Date(iso).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+
+export const toISODate = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+async function authedGet<T>(path: string): Promise<T> {
+  const res = await fetch(`${API_URL}${path}`, { headers: authHeaders() });
+  if (res.status === 401) {
+    clearToken();
+    throw new Error('Sesi berakhir, silakan login kembali');
+  }
+  if (!res.ok) throw new Error(`Gagal memuat data (${res.status})`);
+  return (await res.json()) as T;
+}
+
+// ---------- statistik (kontrak: backend/app/routers/statistics.py) ----------
+
+export interface DailyStat {
+  date: string;
+  total_eggs: number;
+  good_eggs: number;
+  bad_eggs: number;
+  total_chickens: number;
+  healthy_chickens: number;
+  feed_cost: number;
+  other_cost: number;
+  sales_revenue: number;
+}
+
+export interface MonthlyStat {
+  year: number;
+  month: number;
+  total_eggs: number;
+  good_eggs: number;
+  bad_eggs: number;
+  avg_daily_eggs: number;
+  total_feed_cost: number;
+  total_other_cost: number;
+  total_sales_revenue: number;
+  total_other_income: number;
+  total_other_expense: number;
+  total_chickens_end: number;
+}
+
+/** GET /api/statistics/daily?start_date=&end_date= */
+export function getDailyStats(start_date?: string, end_date?: string): Promise<DailyStat[]> {
+  const q = new URLSearchParams();
+  if (start_date) q.set('start_date', start_date);
+  if (end_date) q.set('end_date', end_date);
+  const qs = q.toString();
+  return authedGet<DailyStat[]>(`/statistics/daily${qs ? `?${qs}` : ''}`);
+}
+
+/** GET /api/statistics/monthly?year= */
+export function getMonthlyStats(year?: number): Promise<MonthlyStat[]> {
+  return authedGet<MonthlyStat[]>(`/statistics/monthly${year ? `?year=${year}` : ''}`);
+}
+
+export const MONTH_NAMES = [
+  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
+];

@@ -141,7 +141,9 @@ Hak akses wajib meniru mobile: investor read-only, Manajemen User admin only.
   (belum dieksekusi saat dokumen ini ditulis).
 - Web dashboard: **belum dimulai** (tab baru).
 - Web scaffold `web/` (2026-10-04): Vite React-TS + Tailwind + React Router,
-  halaman Login (JWT) + Dashboard placeholder, Dockerfile multi-stage +
-  nginx.conf (SPA fallback) + docker-compose.yml terpisah (`endog-web`
-  8801:80). `npm run build` lolos. `docker compose up -d --build` BELUM
-  terverifikasi lokal (tanpa Docker) — wajib dijalankan di VPS saat deploy.
+  halaman Login (JWT), Dockerfile multi-stage + nginx.conf + docker-compose
+  terpisah (`endog-web` 8801:80). Sudah deploy VPS, Login jalan.
+- Web milestone Dashboard+Statistik (2026-10-04): sidebar TailAdmin-oranye +
+  Dashboard ringkasan (kartu 30 hari, laba kotor, bar 14 hari, tabel 7 hari +
+  bulanan) + halaman Statistik (filter tanggal + tahun, tabel harian +
+  bulanan + total). Nav modul lain = placeholder.
