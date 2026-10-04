@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.orm import Session
-from sqlalchemy import func, extract
+from sqlalchemy.orm import Session, aliased
+from sqlalchemy import func, extract, and_
 from typing import List, Optional
 from datetime import date
 from app.database import get_db
 from app.auth import get_current_active_user, require_admin, can_view_all_data
-from app.models import User, EggProduction, ChickenManagement, FeedRecord, CostRecord, EggSale, CashTransaction
+from app.models import User, EggProduction, ChickenManagement, CostRecord, EggSale, CashTransaction
 from app.schemas import DailyStatistics, MonthlyStatistics
 
 router = APIRouter(prefix="/api/statistics", tags=["Statistics"])
@@ -18,6 +18,10 @@ def get_daily_statistics(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
+    # Biaya pakan dibaca dari Biaya kategori pakan (pembelian pakan
+    # dicatat di Biaya; tabel feed_records sudah dipensiunkan).
+    FeedCost = aliased(CostRecord)
+    OtherCost = aliased(CostRecord)
     query = db.query(
         EggProduction.date,
         func.sum(EggProduction.total_eggs).label('total_eggs'),
@@ -25,18 +29,24 @@ def get_daily_statistics(
         func.sum(EggProduction.bad_eggs).label('bad_eggs'),
         func.sum(ChickenManagement.total_chickens).label('total_chickens'),
         func.sum(ChickenManagement.healthy_chickens).label('healthy_chickens'),
-        func.sum(FeedRecord.total_cost).label('feed_cost'),
-        func.sum(CostRecord.amount).label('other_cost'),
+        func.sum(FeedCost.amount).label('feed_cost'),
+        func.sum(OtherCost.amount).label('other_cost'),
         func.sum(EggSale.total_price).label('sales_revenue')
     ).outerjoin(
         ChickenManagement,
         func.date(EggProduction.date) == func.date(ChickenManagement.date)
     ).outerjoin(
-        FeedRecord,
-        func.date(EggProduction.date) == func.date(FeedRecord.date)
+        FeedCost,
+        and_(
+            func.date(EggProduction.date) == func.date(FeedCost.date),
+            FeedCost.category == 'pakan'
+        )
     ).outerjoin(
-        CostRecord,
-        func.date(EggProduction.date) == func.date(CostRecord.date)
+        OtherCost,
+        and_(
+            func.date(EggProduction.date) == func.date(OtherCost.date),
+            OtherCost.category != 'pakan'
+        )
     ).outerjoin(
         EggSale,
         func.date(EggProduction.date) == func.date(EggSale.date)
@@ -95,27 +105,29 @@ def get_monthly_statistics(
 
     egg_stats = egg_stats.group_by('year', 'month').all()
 
-    # Get monthly feed costs
+    # Get monthly feed costs (dari Biaya kategori pakan)
     feed_stats = db.query(
-        extract('year', FeedRecord.date).label('year'),
-        extract('month', FeedRecord.date).label('month'),
-        func.sum(FeedRecord.total_cost).label('total_feed_cost')
+        extract('year', CostRecord.date).label('year'),
+        extract('month', CostRecord.date).label('month'),
+        func.sum(CostRecord.amount).label('total_feed_cost')
     ).filter(
-        extract('year', FeedRecord.date) == year
+        extract('year', CostRecord.date) == year,
+        CostRecord.category == 'pakan'
     )
 
     if not can_view_all_data(current_user):
-        feed_stats = feed_stats.filter(FeedRecord.user_id == current_user.id)
+        feed_stats = feed_stats.filter(CostRecord.user_id == current_user.id)
 
     feed_stats = feed_stats.group_by('year', 'month').all()
 
-    # Get monthly other costs
+    # Get monthly other costs (di luar pakan)
     cost_stats = db.query(
         extract('year', CostRecord.date).label('year'),
         extract('month', CostRecord.date).label('month'),
         func.sum(CostRecord.amount).label('total_other_cost')
     ).filter(
-        extract('year', CostRecord.date) == year
+        extract('year', CostRecord.date) == year,
+        CostRecord.category != 'pakan'
     )
 
     if not can_view_all_data(current_user):

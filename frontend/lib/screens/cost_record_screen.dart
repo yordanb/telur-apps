@@ -192,6 +192,19 @@ class CostRecordScreen extends ConsumerWidget {
               record.description,
               style: Theme.of(context).textTheme.bodyMedium,
             ),
+            if (record.category == 'pakan' &&
+                record.feedType != null &&
+                record.feedType!.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text(
+                '${record.feedType} • ${record.quantityKg ?? 0} kg'
+                '${record.pricePerKg != null ? ' @ Rp ${formatter.format(record.pricePerKg)}' : ''}',
+                style: Theme.of(context)
+                    .textTheme
+                    .bodySmall
+                    ?.copyWith(color: Colors.brown[700]),
+              ),
+            ],
             if (record.notes != null && record.notes!.isNotEmpty) ...[
               const SizedBox(height: 8),
               Text(
@@ -258,6 +271,9 @@ class CostRecordScreen extends ConsumerWidget {
     String? selectedSub;
     final descriptionController = TextEditingController();
     final amountController = TextEditingController();
+    final feedTypeController = TextEditingController();
+    final qtyController = TextEditingController();
+    final priceController = TextEditingController();
     final notesController = TextEditingController();
 
     showDialog(
@@ -329,11 +345,56 @@ class CostRecordScreen extends ConsumerWidget {
                   decoration: const InputDecoration(labelText: 'Deskripsi'),
                 ),
                 const SizedBox(height: 8),
-                TextField(
-                  controller: amountController,
-                  decoration: const InputDecoration(labelText: 'Jumlah (Rp)'),
-                  keyboardType: TextInputType.number,
-                ),
+                if (selectedCategory == 'pakan') ...[
+                  TextField(
+                    controller: feedTypeController,
+                    decoration: const InputDecoration(
+                      labelText: 'Jenis pakan',
+                      hintText: 'cth: Konsentrat',
+                    ),
+                    onChanged: (_) => setDialogState(() {}),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: qtyController,
+                    decoration: const InputDecoration(
+                        labelText: 'Jumlah (kg)'),
+                    keyboardType: TextInputType.number,
+                    onChanged: (_) => setDialogState(() {}),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: priceController,
+                    decoration: const InputDecoration(
+                        labelText: 'Harga per kg (Rp)'),
+                    keyboardType: TextInputType.number,
+                    onChanged: (_) => setDialogState(() {}),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      'Total: Rp ${NumberFormat('#,###', 'id_ID').format((double.tryParse(qtyController.text) ?? 0) * (double.tryParse(priceController.text) ?? 0))}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.red,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                ] else ...[
+                  TextField(
+                    controller: amountController,
+                    decoration:
+                        const InputDecoration(labelText: 'Jumlah (Rp)'),
+                    keyboardType: TextInputType.number,
+                  ),
+                ],
                 const SizedBox(height: 8),
                 TextField(
                   controller: notesController,
@@ -359,7 +420,21 @@ class CostRecordScreen extends ConsumerWidget {
                       ? selectedSub
                       : null,
                   description: descriptionController.text,
-                  amount: double.parse(amountController.text),
+                  amount: selectedCategory == 'pakan'
+                      ? (double.tryParse(qtyController.text) ?? 0) *
+                          (double.tryParse(priceController.text) ?? 0)
+                      : double.parse(amountController.text),
+                  feedType: selectedCategory == 'pakan'
+                      ? (feedTypeController.text.trim().isEmpty
+                          ? null
+                          : feedTypeController.text.trim())
+                      : null,
+                  quantityKg: selectedCategory == 'pakan'
+                      ? double.tryParse(qtyController.text)
+                      : null,
+                  pricePerKg: selectedCategory == 'pakan'
+                      ? double.tryParse(priceController.text)
+                      : null,
                   notes: notesController.text.isEmpty ? null : notesController.text,
                   createdAt: DateTime.now(),
                 );
@@ -404,6 +479,11 @@ class CostRecordScreen extends ConsumerWidget {
     String? selectedSub = record.subcategory;
     final descriptionController = TextEditingController(text: record.description);
     final amountController = TextEditingController(text: record.amount.toString());
+    final feedTypeController = TextEditingController(text: record.feedType ?? '');
+    final qtyController =
+        TextEditingController(text: record.quantityKg?.toString() ?? '');
+    final priceController =
+        TextEditingController(text: record.pricePerKg?.toString() ?? '');
     final notesController = TextEditingController(text: record.notes ?? '');
 
     showDialog(
@@ -475,11 +555,56 @@ class CostRecordScreen extends ConsumerWidget {
                   decoration: const InputDecoration(labelText: 'Deskripsi'),
                 ),
                 const SizedBox(height: 8),
-                TextField(
-                  controller: amountController,
-                  decoration: const InputDecoration(labelText: 'Jumlah (Rp)'),
-                  keyboardType: TextInputType.number,
-                ),
+                if (selectedCategory == 'pakan') ...[
+                  TextField(
+                    controller: feedTypeController,
+                    decoration: const InputDecoration(
+                      labelText: 'Jenis pakan',
+                      hintText: 'cth: Konsentrat',
+                    ),
+                    onChanged: (_) => setDialogState(() {}),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: qtyController,
+                    decoration: const InputDecoration(
+                        labelText: 'Jumlah (kg)'),
+                    keyboardType: TextInputType.number,
+                    onChanged: (_) => setDialogState(() {}),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: priceController,
+                    decoration: const InputDecoration(
+                        labelText: 'Harga per kg (Rp)'),
+                    keyboardType: TextInputType.number,
+                    onChanged: (_) => setDialogState(() {}),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      'Total: Rp ${NumberFormat('#,###', 'id_ID').format((double.tryParse(qtyController.text) ?? 0) * (double.tryParse(priceController.text) ?? 0))}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.red,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                ] else ...[
+                  TextField(
+                    controller: amountController,
+                    decoration:
+                        const InputDecoration(labelText: 'Jumlah (Rp)'),
+                    keyboardType: TextInputType.number,
+                  ),
+                ],
                 const SizedBox(height: 8),
                 TextField(
                   controller: notesController,
@@ -505,7 +630,21 @@ class CostRecordScreen extends ConsumerWidget {
                       ? selectedSub
                       : null,
                   description: descriptionController.text,
-                  amount: double.parse(amountController.text),
+                  amount: selectedCategory == 'pakan'
+                      ? (double.tryParse(qtyController.text) ?? 0) *
+                          (double.tryParse(priceController.text) ?? 0)
+                      : double.parse(amountController.text),
+                  feedType: selectedCategory == 'pakan'
+                      ? (feedTypeController.text.trim().isEmpty
+                          ? null
+                          : feedTypeController.text.trim())
+                      : null,
+                  quantityKg: selectedCategory == 'pakan'
+                      ? double.tryParse(qtyController.text)
+                      : null,
+                  pricePerKg: selectedCategory == 'pakan'
+                      ? double.tryParse(priceController.text)
+                      : null,
                   notes: notesController.text.isEmpty ? null : notesController.text,
                   createdAt: record.createdAt,
                 );

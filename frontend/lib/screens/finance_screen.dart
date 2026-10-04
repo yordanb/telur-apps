@@ -147,8 +147,8 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
                   sales: sales, costs: costs, cash: cash),
               const SizedBox(height: 8),
               Text(
-                'Catatan: pengeluaran dihitung dari data Biaya. '
-                'Catatan Pakan tidak masuk kas agar tidak terhitung ganda.',
+                'Catatan: pengeluaran dihitung dari data Biaya (pembelian pakan termasuk). '
+                'Pemberian pakan mengatur stok dan tidak memengaruhi kas.',
                 style: Theme.of(context)
                     .textTheme
                     .bodySmall

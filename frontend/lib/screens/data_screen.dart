@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import '../widgets/responsive.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/chicken_management_provider.dart';
-import '../providers/feed_record_provider.dart';
+import '../providers/feeding_provider.dart';
 import '../providers/cost_record_provider.dart';
 import '../providers/egg_sale_provider.dart';
 import '../providers/cash_transaction_provider.dart';
 import '../providers/chicken_provider.dart';
 import '../services/sync_service.dart';
 import 'chicken_management_screen.dart';
-import 'feed_record_screen.dart';
+import 'feeding_screen.dart';
 import 'cost_record_screen.dart';
 import 'egg_sale_screen.dart';
 import 'finance_screen.dart';
@@ -31,7 +31,7 @@ class DataScreen extends ConsumerWidget {
     await SyncService.syncAll();
     await Future.wait([
       ref.read(chickenManagementProvider.notifier).fetchManagements(),
-      ref.read(feedRecordProvider.notifier).fetchRecords(),
+      ref.read(feedingProvider.notifier).fetchFeedings(),
       ref.read(costRecordProvider.notifier).fetchRecords(),
       ref.read(eggSaleProvider.notifier).fetchSales(),
       ref.read(cashTransactionProvider.notifier).fetchTransactions(),
@@ -45,8 +45,8 @@ class DataScreen extends ConsumerWidget {
     final chickenCount = ref.watch(
       chickenManagementProvider.select((s) => s.managements.length),
     );
-    final feedCount = ref.watch(
-      feedRecordProvider.select((s) => s.records.length),
+    final feedingCount = ref.watch(
+      feedingProvider.select((s) => s.feedings.length),
     );
     final costCount = ref.watch(
       costRecordProvider.select((s) => s.records.length),
@@ -111,13 +111,13 @@ class DataScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 12),
             _DataCard(
-              icon: Icons.grain,
+              icon: Icons.restaurant,
               color: Colors.brown,
-              title: 'Pencatatan Pakan',
-              subtitle: 'Jenis pakan, jumlah (kg), dan harga per kg',
-              count: feedCount,
-              countLabel: 'entri',
-              onTap: () => _open(context, const FeedRecordScreen()),
+              title: 'Pemberian Pakan',
+              subtitle: 'Beri pakan ke ayam + pantau sisa stok',
+              count: feedingCount,
+              countLabel: 'pemberian',
+              onTap: () => _open(context, const FeedingScreen()),
             ),
             const SizedBox(height: 12),
             _DataCard(

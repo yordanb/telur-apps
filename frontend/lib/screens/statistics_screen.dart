@@ -5,7 +5,6 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import '../providers/egg_production_provider.dart';
 import '../providers/chicken_management_provider.dart';
-import '../providers/feed_record_provider.dart';
 import '../providers/cost_record_provider.dart';
 import '../providers/egg_sale_provider.dart';
 import '../services/sync_service.dart';
@@ -18,7 +17,6 @@ class StatisticsScreen extends ConsumerWidget {
     await Future.wait([
       ref.read(eggProductionProvider.notifier).fetchProductions(),
       ref.read(chickenManagementProvider.notifier).fetchManagements(),
-      ref.read(feedRecordProvider.notifier).fetchRecords(),
       ref.read(costRecordProvider.notifier).fetchRecords(),
       ref.read(eggSaleProvider.notifier).fetchSales(),
     ]);
@@ -333,10 +331,12 @@ class StatisticsScreen extends ConsumerWidget {
   }
 
   Widget _buildCostChart(BuildContext context, WidgetRef ref) {
-    final feedState = ref.watch(feedRecordProvider);
     final costState = ref.watch(costRecordProvider);
 
-    // Calculate total costs for last 7 days
+    bool isFeedCost(dynamic r) =>
+        (r.category as String).toLowerCase() == 'pakan';
+
+    // Calculate total costs for last 7 days (pakan dari Biaya)
     final now = DateTime.now();
     final List<double> feedCosts = [];
     final List<double> otherCosts = [];
@@ -346,12 +346,18 @@ class StatisticsScreen extends ConsumerWidget {
       final dayStart = DateTime(date.year, date.month, date.day);
       final dayEnd = dayStart.add(const Duration(days: 1));
 
-      final feedCost = feedState.records
-          .where((r) => r.date.isAfter(dayStart) && r.date.isBefore(dayEnd))
-          .fold<double>(0, (sum, r) => sum + r.totalCost);
+      final feedCost = costState.records
+          .where((r) =>
+              isFeedCost(r) &&
+              r.date.isAfter(dayStart) &&
+              r.date.isBefore(dayEnd))
+          .fold<double>(0, (sum, r) => sum + r.amount);
 
       final otherCost = costState.records
-          .where((r) => r.date.isAfter(dayStart) && r.date.isBefore(dayEnd))
+          .where((r) =>
+              !isFeedCost(r) &&
+              r.date.isAfter(dayStart) &&
+              r.date.isBefore(dayEnd))
           .fold<double>(0, (sum, r) => sum + r.amount);
 
       feedCosts.add(feedCost);
@@ -473,15 +479,19 @@ class StatisticsScreen extends ConsumerWidget {
   Widget _buildSummaryCards(BuildContext context, WidgetRef ref) {
     final eggState = ref.watch(eggProductionProvider);
     final chickenState = ref.watch(chickenManagementProvider);
-    final feedState = ref.watch(feedRecordProvider);
     final costState = ref.watch(costRecordProvider);
 
     final totalEggs = eggState.productions.fold<int>(0, (sum, p) => sum + p.totalEggs);
     final totalChickens = chickenState.managements.isNotEmpty
         ? chickenState.managements.first.totalChickens
         : 0;
-    final totalFeedCost = feedState.records.fold<double>(0, (sum, r) => sum + r.totalCost);
-    final totalOtherCost = costState.records.fold<double>(0, (sum, r) => sum + r.amount);
+    // Biaya pakan kini dari Biaya kategori pakan (pembelian dicatat di Biaya).
+    final totalFeedCost = costState.records
+        .where((r) => r.category.toLowerCase() == 'pakan')
+        .fold<double>(0, (sum, r) => sum + r.amount);
+    final totalOtherCost = costState.records
+        .where((r) => r.category.toLowerCase() != 'pakan')
+        .fold<double>(0, (sum, r) => sum + r.amount);
     final saleState = ref.watch(eggSaleProvider);
     final totalRevenue = saleState.sales.fold<double>(0, (sum, s) => sum + s.totalPrice);
     final soldButir = saleState.sales

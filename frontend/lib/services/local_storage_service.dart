@@ -14,7 +14,7 @@ class LocalStorageService {
   static const String eggProductionQueueKey = 'offline_egg_productions';
   static const String chickenManagementQueueKey =
       'offline_chicken_managements';
-  static const String feedRecordQueueKey = 'offline_feed_records';
+  static const String feedingQueueKey = 'offline_feedings';
   static const String costRecordQueueKey = 'offline_cost_records';
   static const String eggSaleQueueKey = 'offline_egg_sales';
   static const String cashTransactionQueueKey = 'offline_cash_transactions';
@@ -24,7 +24,7 @@ class LocalStorageService {
   static const String eggProductionCacheKey = 'cache_egg_productions';
   static const String chickenManagementCacheKey =
       'cache_chicken_managements';
-  static const String feedRecordCacheKey = 'cache_feed_records';
+  static const String feedingCacheKey = 'cache_feedings';
   static const String costRecordCacheKey = 'cache_cost_records';
   static const String eggSaleCacheKey = 'cache_egg_sales';
   static const String cashTransactionCacheKey = 'cache_cash_transactions';

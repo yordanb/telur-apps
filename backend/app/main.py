@@ -5,7 +5,7 @@ from sqlalchemy import text
 import os
 from app.config import get_settings
 from app.database import engine, Base
-from app.routers import auth, egg_production, chicken_management, feed_records, cost_records, egg_sales, cash_transactions, chickens, statistics, user_management
+from app.routers import auth, egg_production, chicken_management, feed_records, cost_records, egg_sales, cash_transactions, chickens, feedings, statistics, user_management
 
 settings = get_settings()
 
@@ -50,6 +50,81 @@ def _ensure_cost_subcategory_column():
 
 _ensure_cost_subcategory_column()
 
+
+def _ensure_cost_feed_columns():
+    """Kolom pembelian pakan di cost_records (feed_type/quantity_kg/price_per_kg)."""
+    try:
+        with engine.connect() as conn:
+            conn = conn.execution_options(isolation_level="AUTOCOMMIT")
+            for ddl in (
+                "ALTER TABLE cost_records "
+                "ADD COLUMN IF NOT EXISTS feed_type VARCHAR(100)",
+                "ALTER TABLE cost_records "
+                "ADD COLUMN IF NOT EXISTS quantity_kg DOUBLE PRECISION",
+                "ALTER TABLE cost_records "
+                "ADD COLUMN IF NOT EXISTS price_per_kg DOUBLE PRECISION",
+            ):
+                conn.execute(text(ddl))
+    except Exception:
+        pass
+
+
+_ensure_cost_feed_columns()
+
+
+def _migrate_feed_purchases_to_costs():
+    """Sekali jalan: pindahkan pembelian pakan lama (feed_records) menjadi
+    Biaya kategori pakan, lalu hapus baris asalnya agar tidak ganda.
+    Atomik (satu transaksi); idempoten karena baris yang sudah pindah
+    tidak ada lagi di tabel asal.
+    """
+    try:
+        with engine.begin() as conn:
+            exists = conn.execute(
+                text("SELECT to_regclass('public.feed_records')")
+            ).scalar()
+            if not exists:
+                return
+            rows = conn.execute(
+                text(
+                    "SELECT id, user_id, date, feed_type, quantity_kg, "
+                    "cost_per_kg, total_cost, notes, created_at "
+                    "FROM feed_records"
+                )
+            ).mappings().all()
+            for r in rows:
+                conn.execute(
+                    text(
+                        "INSERT INTO cost_records "
+                        "(user_id, date, category, description, amount, "
+                        "feed_type, quantity_kg, price_per_kg, notes, created_at) "
+                        "VALUES (:user_id, :date, 'pakan', :description, :amount, "
+                        ":feed_type, :quantity_kg, :price_per_kg, :notes, :created_at)"
+                    ),
+                    {
+                        "user_id": r["user_id"],
+                        "date": r["date"],
+                        "description": f"Pembelian {r['feed_type']}",
+                        "amount": r["total_cost"],
+                        "feed_type": r["feed_type"],
+                        "quantity_kg": r["quantity_kg"],
+                        "price_per_kg": r["cost_per_kg"],
+                        "notes": r["notes"],
+                        "created_at": r["created_at"],
+                    },
+                )
+                conn.execute(
+                    text("DELETE FROM feed_records WHERE id = :id"),
+                    {"id": r["id"]},
+                )
+            if rows:
+                print(f"[migrate] {len(rows)} pembelian pakan dipindah ke Biaya")
+    except Exception as e:
+        print(f"[migrate] feed_records -> cost_records dilewati: {e}")
+
+
+_migrate_feed_purchases_to_costs()
+
 # Create database tables
 Base.metadata.create_all(bind=engine)
 
@@ -82,6 +157,7 @@ app.include_router(cost_records.router)
 app.include_router(egg_sales.router)
 app.include_router(cash_transactions.router)
 app.include_router(chickens.router)
+app.include_router(feedings.router)
 app.include_router(statistics.router)
 app.include_router(user_management.router)
 

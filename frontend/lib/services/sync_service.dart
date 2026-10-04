@@ -63,16 +63,9 @@ const _queues = [
     },
   ),
   _QueueConfig(
-    LocalStorageService.feedRecordQueueKey,
-    '/feed-records/',
-    {
-      'date',
-      'feed_type',
-      'quantity_kg',
-      'cost_per_kg',
-      'total_cost',
-      'notes',
-    },
+    LocalStorageService.feedingQueueKey,
+    '/feedings/',
+    {'date', 'feed_type', 'quantity_kg', 'notes'},
   ),
   _QueueConfig(
     LocalStorageService.costRecordQueueKey,

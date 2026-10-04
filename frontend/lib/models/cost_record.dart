@@ -6,6 +6,10 @@ class CostRecord {
   final String? subcategory;
   final String description;
   final double amount;
+  // Khusus pembelian pakan (category == 'pakan')
+  final String? feedType;
+  final double? quantityKg;
+  final double? pricePerKg;
   final String? notes;
   final DateTime createdAt;
   final DateTime? updatedAt;
@@ -18,6 +22,9 @@ class CostRecord {
     this.subcategory,
     required this.description,
     required this.amount,
+    this.feedType,
+    this.quantityKg,
+    this.pricePerKg,
     this.notes,
     required this.createdAt,
     this.updatedAt,
@@ -32,6 +39,9 @@ class CostRecord {
       subcategory: json['subcategory'],
       description: json['description'],
       amount: json['amount'].toDouble(),
+      feedType: json['feed_type'],
+      quantityKg: json['quantity_kg']?.toDouble(),
+      pricePerKg: json['price_per_kg']?.toDouble(),
       notes: json['notes'],
       createdAt: DateTime.parse(json['created_at']),
       updatedAt: json['updated_at'] != null ? DateTime.parse(json['updated_at']) : null,
@@ -45,6 +55,9 @@ class CostRecord {
       'subcategory': subcategory,
       'description': description,
       'amount': amount,
+      'feed_type': feedType,
+      'quantity_kg': quantityKg,
+      'price_per_kg': pricePerKg,
       'notes': notes,
     };
   }

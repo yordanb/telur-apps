@@ -178,6 +178,10 @@ class CostRecordBase(BaseModel):
     subcategory: Optional[str] = None
     description: str
     amount: float
+    # Khusus pembelian pakan (category='pakan')
+    feed_type: Optional[str] = None
+    quantity_kg: Optional[float] = None
+    price_per_kg: Optional[float] = None
     notes: Optional[str] = None
 
 
@@ -191,6 +195,9 @@ class CostRecordUpdate(BaseModel):
     subcategory: Optional[str] = None
     description: Optional[str] = None
     amount: Optional[float] = None
+    feed_type: Optional[str] = None
+    quantity_kg: Optional[float] = None
+    price_per_kg: Optional[float] = None
     notes: Optional[str] = None
 
 
@@ -297,6 +304,35 @@ class ChickenResponse(ChickenBase):
     id: int
     user_id: int
     photo_path: Optional[str] = None
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+# ============== Feeding Schemas (pemberian pakan) ==============
+class FeedingBase(BaseModel):
+    date: datetime
+    feed_type: str
+    quantity_kg: float
+    notes: Optional[str] = None
+
+
+class FeedingCreate(FeedingBase):
+    pass
+
+
+class FeedingUpdate(BaseModel):
+    date: Optional[datetime] = None
+    feed_type: Optional[str] = None
+    quantity_kg: Optional[float] = None
+    notes: Optional[str] = None
+
+
+class FeedingResponse(FeedingBase):
+    id: int
+    user_id: int
     created_at: datetime
     updated_at: Optional[datetime] = None
 

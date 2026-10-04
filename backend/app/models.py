@@ -42,6 +42,7 @@ class User(Base):
     egg_sales = relationship("EggSale", back_populates="user")
     cash_transactions = relationship("CashTransaction", back_populates="user")
     chickens = relationship("Chicken", back_populates="user")
+    feedings = relationship("Feeding", back_populates="user")
 
 
 class EggProduction(Base):
@@ -104,6 +105,25 @@ class FeedRecord(Base):
     user = relationship("User", back_populates="feed_records")
 
 
+class Feeding(Base):
+    """Pemberian pakan ke ayam (konsumsi). Stok = pembelian (Biaya pakan)
+    dikurangi total pemberian, per jenis pakan."""
+
+    __tablename__ = "feedings"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    date = Column(DateTime(timezone=True), nullable=False)
+    feed_type = Column(String(100), nullable=False)
+    quantity_kg = Column(Float, nullable=False)
+    notes = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    # Relationships
+    user = relationship("User", back_populates="feedings")
+
+
 class CostRecord(Base):
     __tablename__ = "cost_records"
 
@@ -114,6 +134,10 @@ class CostRecord(Base):
     subcategory = Column(String(100), nullable=True)  # khusus operasional: perbaikan/perawatan/pembuatan kandang
     description = Column(String(255), nullable=False)
     amount = Column(Float, nullable=False)
+    # Khusus pembelian pakan: jenis + kilo + harga/kg (amount = qty * harga)
+    feed_type = Column(String(100), nullable=True)
+    quantity_kg = Column(Float, nullable=True)
+    price_per_kg = Column(Float, nullable=True)
     notes = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())

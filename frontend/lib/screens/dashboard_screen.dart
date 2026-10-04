@@ -7,7 +7,7 @@ import 'package:intl/intl.dart';
 import '../providers/auth_provider.dart';
 import '../providers/egg_production_provider.dart';
 import '../providers/chicken_management_provider.dart';
-import '../providers/feed_record_provider.dart';
+import '../providers/feeding_provider.dart';
 import '../providers/cost_record_provider.dart';
 import '../providers/egg_sale_provider.dart';
 import '../providers/cash_transaction_provider.dart';
@@ -15,7 +15,7 @@ import '../providers/chicken_provider.dart';
 import '../services/sync_service.dart';
 import 'egg_production_screen.dart';
 import 'chicken_management_screen.dart';
-import 'feed_record_screen.dart';
+import 'feeding_screen.dart';
 import 'cost_record_screen.dart';
 import 'statistics_screen.dart';
 import 'data_screen.dart';
@@ -67,7 +67,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       await Future.wait([
         ref.read(eggProductionProvider.notifier).fetchProductions(),
         ref.read(chickenManagementProvider.notifier).fetchManagements(),
-        ref.read(feedRecordProvider.notifier).fetchRecords(),
+        ref.read(feedingProvider.notifier).fetchFeedings(),
         ref.read(costRecordProvider.notifier).fetchRecords(),
         ref.read(eggSaleProvider.notifier).fetchSales(),
         ref.read(cashTransactionProvider.notifier).fetchTransactions(),
@@ -275,9 +275,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             ? chickenState.managements.first.totalChickens
             : 0);
 
-    // Pakan hari ini (kg)
-    final feedState = ref.watch(feedRecordProvider);
-    final todayFeedKg = feedState.records
+    // Pakan yang diberikan hari ini (kg)
+    final feedingState = ref.watch(feedingProvider);
+    final todayFeedKg = feedingState.feedings
         .where((r) => _isSameDay(r.date, today))
         .fold<double>(0, (sum, r) => sum + r.quantityKg);
 
@@ -303,10 +303,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         const SizedBox(width: 10),
         Expanded(
           child: _KpiCard(
-            icon: Icons.grain,
+            icon: Icons.restaurant,
             color: Colors.brown,
             value: '${todayFeedKg.toStringAsFixed(1)} kg',
-            label: 'Pakan hari ini',
+            label: 'Diberi hari ini',
           ),
         ),
       ],
@@ -434,10 +434,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         const SizedBox(width: 10),
         Expanded(
           child: _ActionTile(
-            icon: Icons.grain,
+            icon: Icons.restaurant,
             color: Colors.brown,
             label: 'Pakan',
-            onTap: () => _openScreen(const FeedRecordScreen()),
+            onTap: () => _openScreen(const FeedingScreen()),
           ),
         ),
         const SizedBox(width: 10),
@@ -545,10 +545,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-  /// Gabungkan produksi telur, pakan, biaya, dan penjualan → terbaru → 5 teratas
+  /// Gabungkan produksi, pemberian pakan, biaya, penjualan, kas → 5 teratas
   List<_ActivityItem> _recentActivities() {
     final eggs = ref.watch(eggProductionProvider.select((s) => s.productions));
-    final feeds = ref.watch(feedRecordProvider.select((s) => s.records));
+    final feedings = ref.watch(feedingProvider.select((s) => s.feedings));
     final costs = ref.watch(costRecordProvider.select((s) => s.records));
     final sales = ref.watch(eggSaleProvider.select((s) => s.sales));
     final cash =
@@ -564,11 +564,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             subtitle: dateFormat.format(p.createdAt),
             value: '${p.totalEggs} telur',
           )),
-      ...feeds.map((r) => _ActivityItem(
+      ...feedings.map((r) => _ActivityItem(
             time: r.createdAt,
-            icon: Icons.grain,
+            icon: Icons.restaurant,
             color: Colors.brown,
-            title: 'Pakan ${r.feedType}',
+            title: 'Beri ${r.feedType}',
             subtitle: dateFormat.format(r.createdAt),
             value: '${r.quantityKg} kg',
           )),
