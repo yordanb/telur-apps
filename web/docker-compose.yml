@@ -1,0 +1,10 @@
+services:
+  web:
+    build:
+      context: .
+      args:
+        VITE_API_URL: ${VITE_API_URL:-https://egg.mibt.my.id/api}
+    container_name: endog-web
+    ports:
+      - "8801:80"
+    restart: unless-stopped

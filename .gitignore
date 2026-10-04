@@ -85,3 +85,7 @@ windows/.dart_tool/
 *.jks
 *.keystore
 key.properties
+
+# Web (Vite)
+node_modules/
+web/dist/

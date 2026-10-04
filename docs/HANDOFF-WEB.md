@@ -140,3 +140,8 @@ Hak akses wajib meniru mobile: investor read-only, Manajemen User admin only.
 - Data produksi = data dummy trial; rencana reset via TRUNCATE sebelum go-live
   (belum dieksekusi saat dokumen ini ditulis).
 - Web dashboard: **belum dimulai** (tab baru).
+- Web scaffold `web/` (2026-10-04): Vite React-TS + Tailwind + React Router,
+  halaman Login (JWT) + Dashboard placeholder, Dockerfile multi-stage +
+  nginx.conf (SPA fallback) + docker-compose.yml terpisah (`endog-web`
+  8801:80). `npm run build` lolos. `docker compose up -d --build` BELUM
+  terverifikasi lokal (tanpa Docker) — wajib dijalankan di VPS saat deploy.
