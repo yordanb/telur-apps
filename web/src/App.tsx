@@ -5,7 +5,13 @@ import { useAuth } from './lib/auth';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Statistik from './pages/Statistik';
-import Placeholder from './pages/Placeholder';
+import Produksi from './pages/Produksi';
+import Ayam from './pages/Ayam';
+import Pakan from './pages/Pakan';
+import Biaya from './pages/Biaya';
+import Penjualan from './pages/Penjualan';
+import Kas from './pages/Kas';
+import Pengguna from './pages/Pengguna';
 
 function RequireAuth({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
@@ -30,13 +36,13 @@ export default function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/" element={authed(<Dashboard />)} />
       <Route path="/statistik" element={authed(<Statistik />)} />
-      <Route path="/produksi" element={authed(<Placeholder title="🥚 Produksi Telur" />)} />
-      <Route path="/ayam" element={authed(<Placeholder title="🐔 Data Ayam" />)} />
-      <Route path="/pakan" element={authed(<Placeholder title="🌾 Pemberian Pakan" />)} />
-      <Route path="/biaya" element={authed(<Placeholder title="🧾 Biaya" />)} />
-      <Route path="/penjualan" element={authed(<Placeholder title="💰 Penjualan Telur" />)} />
-      <Route path="/kas" element={authed(<Placeholder title="👛 Kas Manual" />)} />
-      <Route path="/pengguna" element={authed(<Placeholder title="👥 Manajemen Pengguna" />)} />
+      <Route path="/produksi" element={authed(<Produksi />)} />
+      <Route path="/ayam" element={authed(<Ayam />)} />
+      <Route path="/pakan" element={authed(<Pakan />)} />
+      <Route path="/biaya" element={authed(<Biaya />)} />
+      <Route path="/penjualan" element={authed(<Penjualan />)} />
+      <Route path="/kas" element={authed(<Kas />)} />
+      <Route path="/pengguna" element={authed(<Pengguna />)} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
