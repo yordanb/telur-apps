@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
 
@@ -37,21 +38,44 @@ export default function Layout({ children }: { children: ReactNode }) {
   }
 
   const items = NAV.filter((n) => !n.adminOnly || user?.role === 'admin');
+  // Mode mini (ikon saja) tersimpan per browser.
+  const [mini, setMini] = useState(() => localStorage.getItem('endog_sidebar') === 'mini');
+
+  function toggleMini() {
+    setMini((m) => {
+      localStorage.setItem('endog_sidebar', m ? 'open' : 'mini');
+      return !m;
+    });
+  }
 
   return (
     <div className="flex min-h-screen bg-gray-100">
-      {/* Sidebar ala TailAdmin, aksen oranye Endog */}
-      <aside className="hidden w-60 shrink-0 flex-col bg-gray-900 text-gray-200 md:flex">
-        <div className="px-5 py-5 text-xl font-bold text-white">
-          🥚 Endog
+      {/* Sidebar ala TailAdmin, aksen Endog; bisa mini (ikon saja) */}
+      <aside
+        className={`hidden shrink-0 flex-col bg-gray-900 text-gray-200 transition-all md:flex ${
+          mini ? 'w-16' : 'w-60'
+        }`}
+      >
+        <div className={`flex items-center py-5 text-xl font-bold text-white ${mini ? 'flex-col gap-2' : 'justify-between px-5'}`}>
+          <span title="Endog">{mini ? '🥚' : '🥚 Endog'}</span>
+          <button
+            onClick={toggleMini}
+            title={mini ? 'Tampilkan menu' : 'Sembunyikan (ikon saja)'}
+            className="rounded-lg px-2 py-1 text-sm text-gray-400 hover:bg-gray-800 hover:text-white"
+          >
+            {mini ? '▶' : '◀'}
+          </button>
         </div>
         <nav className="flex-1 space-y-1 px-3">
           {items.map((n) => (
             <NavLink
               key={n.to}
               to={n.to}
+              title={n.label}
               className={({ isActive }) =>
                 `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${
+                  mini ? 'justify-center' : ''
+                } ${
                   isActive
                     ? 'bg-brand-600 text-white'
                     : 'text-gray-300 hover:bg-gray-800 hover:text-white'
@@ -59,12 +83,24 @@ export default function Layout({ children }: { children: ReactNode }) {
               }
             >
               <span>{n.icon}</span>
-              {n.label}
+              {!mini && n.label}
             </NavLink>
           ))}
         </nav>
-        <div className="border-t border-gray-800 p-4 text-xs text-gray-400">
-          {user?.username} · {user?.role}
+        <div className="border-t border-gray-800 p-4 text-gray-400">
+          {mini ? (
+            <button
+              onClick={toggleMini}
+              title={`Tampilkan menu (${user?.username})`}
+              className="mx-auto flex h-9 w-9 items-center justify-center rounded-full bg-brand-600 text-sm font-bold text-white"
+            >
+              {user?.username?.[0]?.toUpperCase() ?? '?'}
+            </button>
+          ) : (
+            <p className="text-xs">
+              {user?.username} · {user?.role}
+            </p>
+          )}
         </div>
       </aside>
 

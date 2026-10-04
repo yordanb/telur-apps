@@ -203,3 +203,5 @@ Hak akses wajib meniru mobile: investor read-only, Manajemen User admin only.
   semua role), web: picker di Pengaturan + Tailwind brand via CSS var
   (`data-theme`, grafik ikut). Diuji: unit whitelist + `npm run build`.
   Deploy backend + web.
+- Sidebar mini (2026-10-04): tombol ◀/▶, mode ikon saja (w-16, tooltip),
+  pilihan tersimpan per browser (`endog_sidebar`).
