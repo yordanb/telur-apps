@@ -42,6 +42,20 @@ class PasswordChange(BaseModel):
     new_password: str
 
 
+# ============== Activity Log Schemas ==============
+class ActivityLogResponse(BaseModel):
+    id: int
+    user_id: Optional[int] = None
+    username: str
+    action: str
+    detail: Optional[str] = None
+    ip_address: Optional[str] = None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
 class Token(BaseModel):
     access_token: str
     token_type: str

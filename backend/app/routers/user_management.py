@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, Request, status, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from app.database import get_db
 from app.auth import require_admin, get_password_hash
+from app.activity import log_activity, client_ip
 from app.models import User, UserRole
 from app.schemas import UserResponse, UserUpdate, UserCreate
 
@@ -35,6 +36,7 @@ def get_user(
 @router.post("/", response_model=UserResponse)
 def create_user(
     user: UserCreate,
+    request: Request,
     current_user: User = Depends(require_admin),
     db: Session = Depends(get_db)
 ):
@@ -65,6 +67,14 @@ def create_user(
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
+    log_activity(
+        db,
+        username=current_user.username,
+        action="users.create",
+        user_id=current_user.id,
+        detail=f"Membuat {db_user.username} ({db_user.role.value})",
+        ip=client_ip(request),
+    )
     return db_user
 
 
@@ -72,6 +82,7 @@ def create_user(
 def update_user(
     user_id: int,
     user_update: UserUpdate,
+    request: Request,
     current_user: User = Depends(require_admin),
     db: Session = Depends(get_db)
 ):
@@ -85,12 +96,21 @@ def update_user(
 
     db.commit()
     db.refresh(user)
+    log_activity(
+        db,
+        username=current_user.username,
+        action="users.update",
+        user_id=current_user.id,
+        detail=f"Mengubah {user.username}: {', '.join(update_data.keys()) or '-'}",
+        ip=client_ip(request),
+    )
     return user
 
 
 @router.delete("/{user_id}")
 def delete_user(
     user_id: int,
+    request: Request,
     current_user: User = Depends(require_admin),
     db: Session = Depends(get_db)
 ):
@@ -101,6 +121,15 @@ def delete_user(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
+    target = user.username
     db.delete(user)
     db.commit()
+    log_activity(
+        db,
+        username=current_user.username,
+        action="users.delete",
+        user_id=current_user.id,
+        detail=f"Menghapus {target}",
+        ip=client_ip(request),
+    )
     return {"message": "User deleted successfully"}

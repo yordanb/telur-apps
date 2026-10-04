@@ -227,3 +227,22 @@ class EggSale(Base):
 
     # Relationships
     user = relationship("User", back_populates="egg_sales")
+
+
+class ActivityLog(Base):
+    """Jejak audit: siapa berbuat apa dan kapan (untuk review admin).
+
+    Tabel baru → dibuat otomatis oleh create_all (tanpa migrasi DDL).
+    user_id null-able: login gagal tidak punya user, dan riwayat tetap
+    disimpan jika user dihapus.
+    """
+
+    __tablename__ = "activity_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    username = Column(String(50), nullable=False, index=True)
+    action = Column(String(100), nullable=False, index=True)
+    detail = Column(Text, nullable=True)
+    ip_address = Column(String(64), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())

@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from datetime import timedelta
 from app.database import get_db
 from app.auth import authenticate_user, create_access_token, get_password_hash, get_current_active_user, verify_password
+from app.activity import log_activity, client_ip
 from app.models import User, UserRole
 from app.schemas import UserCreate, UserResponse, Token, UserUpdate, PasswordChange
 from app.config import get_settings
@@ -13,7 +14,7 @@ settings = get_settings()
 
 
 @router.post("/register", response_model=UserResponse)
-def register(user: UserCreate, db: Session = Depends(get_db)):
+def register(user: UserCreate, request: Request, db: Session = Depends(get_db)):
     # Check if username exists
     db_user = db.query(User).filter(User.username == user.username).first()
     if db_user:
@@ -50,13 +51,32 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
+    log_activity(
+        db,
+        username=db_user.username,
+        action="auth.register",
+        user_id=db_user.id,
+        detail=f"Registrasi {db_user.role.value}",
+        ip=client_ip(request) if request else None,
+    )
     return db_user
 
 
 @router.post("/login", response_model=Token)
-def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+def login(
+    request: Request,
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: Session = Depends(get_db)
+):
     user = authenticate_user(db, form_data.username, form_data.password)
     if not user:
+        log_activity(
+            db,
+            username=form_data.username,
+            action="auth.login_failed",
+            detail="Username atau password salah",
+            ip=client_ip(request),
+        )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
@@ -66,7 +86,32 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
     access_token = create_access_token(
         data={"sub": user.username}, expires_delta=access_token_expires
     )
+    log_activity(
+        db,
+        username=user.username,
+        action="auth.login",
+        user_id=user.id,
+        detail=f"Login sebagai {user.role.value}",
+        ip=client_ip(request),
+    )
     return {"access_token": access_token, "token_type": "bearer"}
+
+
+@router.post("/logout")
+def logout(
+    request: Request,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Logout eksplisit agar tercatat di audit (token dibuang di klien)."""
+    log_activity(
+        db,
+        username=current_user.username,
+        action="auth.logout",
+        user_id=current_user.id,
+        ip=client_ip(request),
+    )
+    return {"message": "Logged out"}
 
 
 @router.get("/me", response_model=UserResponse)
@@ -93,6 +138,7 @@ def update_user_me(
 @router.put("/change-password")
 def change_password(
     payload: PasswordChange,
+    request: Request,
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
@@ -109,4 +155,12 @@ def change_password(
         )
     user.hashed_password = get_password_hash(payload.new_password)
     db.commit()
+    log_activity(
+        db,
+        username=user.username,
+        action="auth.change_password",
+        user_id=user.id,
+        detail="Password diubah",
+        ip=client_ip(request) if request else None,
+    )
     return {"message": "Password berhasil diubah"}

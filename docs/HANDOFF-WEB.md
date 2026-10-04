@@ -28,6 +28,12 @@ skema di sini yang berlaku, bukan tebakan).
   (hanya `email`/`full_name` — role tidak bisa diubah sendiri)
 - Ganti password: `PUT /api/auth/change-password`
   `{old_password, new_password(min 6)}` → 400 jika password lama salah
+- Logout: `POST /api/auth/logout` (butuh token; token dibuang di klien)
+- Log aktivitas: `GET /api/activity-logs/` (**admin only**,
+  filter tanggal/aksi/username + `skip/limit`). Sumber: login sukses/
+  gagal, logout, register, ganti password, CRUD user (eksplisit) +
+  middleware untuk SEMUA tulis-data modul lain
+  (`<resource>.create/update/delete`, tanpa token valid tidak dicatat)
 - Register publik `POST /api/auth/register` hanya menghasilkan role
   **pegawai** (kecuali DB kosong → bootstrap admin). Jangan andalkan untuk
   membuat admin/investor — itu lewat Manajemen User.
@@ -73,7 +79,9 @@ skema di sini yang berlaku, bukan tebakan).
 
 PostgreSQL 15. Tabel: `users`, `egg_productions`, `egg_production_details`,
 `chickens`, `chicken_managements`, `feed_records` (pensiun/kosong),
-`feedings`, `cost_records`, `egg_sales`, `cash_transactions`.
+`feedings`, `cost_records`, `egg_sales`, `cash_transactions`,
+`activity_logs` (audit: user, aksi, detail, IP, waktu; dibuat via
+`create_all`, tanpa migrasi DDL).
 Enum: `userrole` (admin/pegawai/investor), `saleunit`, `cashdirection`.
 
 Migrasi jalan otomatis saat container start (`backend/app/main.py`):
@@ -172,3 +180,10 @@ Hak akses wajib meniru mobile: investor read-only, Manajemen User admin only.
   keluar); halaman grafik di-lazy-load agar bundle awal kecil.
   Validasi form client-side (wajib isi, angka > 0, email, min password 6)
   sebelum request; §1 dibersihkan (stack tercatat diputuskan).
+- Audit log (2026-10-04): tabel `activity_logs` + `POST /auth/logout` +
+  `GET /api/activity-logs/` (admin) + halaman 📋 Log Aktivitas web
+  (filter tanggal/aksi/username). Tercatat: login/gagal, logout,
+  register, ganti password, CRUD user, semua tulis-data modul
+  (middleware). Diuji lokal: compileall + impor router + unit
+  (describe_write 9 kasus, log_activity, client_ip). Deploy backend
+  + web (keduanya berubah).

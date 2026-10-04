@@ -60,6 +60,13 @@ export async function fetchMe(): Promise<User> {
 }
 
 export function logout() {
+  // Logout server best-effort agar tercatat di audit; token selalu dibuang.
+  const token = getToken();
+  if (token) {
+    fetch(`${API_URL}/auth/logout`, { method: 'POST', headers: authHeaders() }).catch(() => {
+      /* abaikan — offline/kedaluwarsa tetap logout lokal */
+    });
+  }
   clearToken();
 }
 

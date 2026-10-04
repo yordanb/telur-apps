@@ -1,11 +1,13 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
+from jose import jwt
 import os
 from app.config import get_settings
-from app.database import engine, Base
-from app.routers import auth, egg_production, chicken_management, feed_records, cost_records, egg_sales, cash_transactions, chickens, feedings, statistics, user_management
+from app.database import engine, Base, SessionLocal
+from app.activity import log_activity, client_ip, describe_write
+from app.routers import auth, egg_production, chicken_management, feed_records, cost_records, egg_sales, cash_transactions, chickens, feedings, statistics, user_management, activity_logs
 
 settings = get_settings()
 
@@ -160,6 +162,43 @@ app.include_router(chickens.router)
 app.include_router(feedings.router)
 app.include_router(statistics.router)
 app.include_router(user_management.router)
+app.include_router(activity_logs.router)
+
+
+def _username_from_request(request: Request):
+    try:
+        scheme, _, token = request.headers.get("authorization", "").partition(" ")
+        if scheme.lower() != "bearer" or not token:
+            return None
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        return payload.get("sub")
+    except Exception:
+        return None
+
+
+@app.middleware("http")
+async def log_writes_middleware(request: Request, call_next):
+    response = await call_next(request)
+    try:
+        action = describe_write(request.method, request.url.path)
+        username = _username_from_request(request)
+        # Tulis tanpa token valid tidak dicatat (menghindari noise 401);
+        # login gagal dicatat eksplisit di endpoint login.
+        if action and username:
+            db = SessionLocal()
+            try:
+                log_activity(
+                    db,
+                    username=username,
+                    action=action,
+                    detail=f"{request.method} {request.url.path} -> {response.status_code}",
+                    ip=client_ip(request),
+                )
+            finally:
+                db.close()
+    except Exception:
+        pass
+    return response
 
 
 @app.get("/")
