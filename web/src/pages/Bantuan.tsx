@@ -1,17 +1,19 @@
+import { useState } from 'react';
 import { useAuth } from '../lib/auth';
-import { PageHead } from '../components/ui';
+import { Modal, PageHead } from '../components/ui';
 
 interface Section {
   icon: string;
   title: string;
+  desc: string;
   roles?: string;
   points: string[];
 }
 
 const SECTIONS: Section[] = [
   {
-    icon: '🏠',
-    title: 'Dashboard',
+    icon: '🏠', title: 'Dashboard',
+    desc: 'Ringkasan 30 hari, grafik & tabel cepat',
     points: [
       'Ringkasan 30 hari terakhir: total telur, pendapatan, biaya pakan, biaya lain, dan perkiraan laba kotor.',
       'Grafik 14 hari terakhir + tabel 7 hari dan bulanan tahun berjalan.',
@@ -19,8 +21,8 @@ const SECTIONS: Section[] = [
     ],
   },
   {
-    icon: '📊',
-    title: 'Statistik',
+    icon: '📊', title: 'Statistik',
+    desc: 'Tren harian & rekap bulanan + filter',
     points: [
       'Tabel harian (telur, baik, rusak, biaya pakan/lain, pendapatan) + total, dan tabel bulanan (termasuk kas masuk/keluar).',
       'Atur rentang tanggal dan tahun, lalu tekan Tampilkan.',
@@ -28,8 +30,8 @@ const SECTIONS: Section[] = [
     ],
   },
   {
-    icon: '🥚',
-    title: 'Produksi Telur',
+    icon: '🥚', title: 'Produksi Telur',
+    desc: 'Catat hasil harian + rincian per ayam',
     roles: 'Tulis: admin + pegawai. Investor baca saja.',
     points: [
       'Catat hasil harian: total, baik, rusak, berat rata-rata (opsional), catatan.',
@@ -38,8 +40,8 @@ const SECTIONS: Section[] = [
     ],
   },
   {
-    icon: '🐔',
-    title: 'Ayam (Register & Agregat)',
+    icon: '🐔', title: 'Ayam',
+    desc: 'Register bersama, foto & agregat harian',
     roles: 'Lihat: semua role. Tulis: admin + pegawai. Hapus: pemilik/admin.',
     points: [
       'Register: ayam adalah ASET KANDANG BERSAMA — terlihat semua user. Kode unik global; status: aktif/sakit/mati/terjual.',
@@ -48,8 +50,8 @@ const SECTIONS: Section[] = [
     ],
   },
   {
-    icon: '🌾',
-    title: 'Pakan (Pemberian)',
+    icon: '🌾', title: 'Pakan',
+    desc: 'Stok global & riwayat pemberian',
     roles: 'Tulis: admin + pegawai. Investor baca saja.',
     points: [
       'Kartu stok = pembelian (menu Biaya kategori pakan) − pemberian. Global satu kandang, terlihat semua role.',
@@ -58,8 +60,8 @@ const SECTIONS: Section[] = [
     ],
   },
   {
-    icon: '🧾',
-    title: 'Biaya',
+    icon: '🧾', title: 'Biaya',
+    desc: 'Pembelian pakan (kg), obat & operasional',
     roles: 'Tulis: admin + pegawai (milik sendiri). Investor baca semua.',
     points: [
       'Kategori pakan = pembelian: wajib jenis + kg + harga/kg; total OTOMATIS = kg × harga, sekaligus menambah stok.',
@@ -68,8 +70,8 @@ const SECTIONS: Section[] = [
     ],
   },
   {
-    icon: '💰',
-    title: 'Penjualan Telur',
+    icon: '💰', title: 'Penjualan Telur',
+    desc: 'Butir/kg, total dihitung server',
     roles: 'Tulis: admin + pegawai. Investor baca saja.',
     points: [
       'Satuan butir atau kg; isi jumlah + harga per satuan.',
@@ -77,8 +79,8 @@ const SECTIONS: Section[] = [
     ],
   },
   {
-    icon: '👛',
-    title: 'Kas Manual',
+    icon: '👛', title: 'Kas Manual',
+    desc: 'Arus kas di luar penjualan & biaya',
     roles: 'Tulis: admin + pegawai. Investor baca saja.',
     points: [
       'Arah masuk (cth: Penjualan ayam afkir, Setoran modal) atau keluar; jumlah harus > 0.',
@@ -86,8 +88,8 @@ const SECTIONS: Section[] = [
     ],
   },
   {
-    icon: '💳',
-    title: 'Keuangan',
+    icon: '💳', title: 'Keuangan',
+    desc: 'Neraca arus kas + rincian kategori',
     points: [
       'Pemasukan = penjualan telur + kas masuk. Pengeluaran = SEMUA Biaya + kas keluar.',
       'Pilih periode 7/30/90 hari atau Semua (periode panjang diagregat per bulan di grafik).',
@@ -95,8 +97,8 @@ const SECTIONS: Section[] = [
     ],
   },
   {
-    icon: '🏆',
-    title: 'Produktivitas Ayam',
+    icon: '🏆', title: 'Produktivitas Ayam',
+    desc: 'Laying rate per ekor & peringkat',
     points: [
       'Laying rate per ekor = total butir ÷ hari-hadir × 100%.',
       'Hari-hadir = dari maks(awal periode, tanggal masuk ayam) sampai hari ini.',
@@ -104,8 +106,8 @@ const SECTIONS: Section[] = [
     ],
   },
   {
-    icon: '👥',
-    title: 'Pengguna',
+    icon: '👥', title: 'Pengguna',
+    desc: 'Kelola akun & role',
     roles: 'KHUSUS ADMIN.',
     points: [
       'Tambah user: username, email, nama, password, role (admin/pegawai/investor).',
@@ -114,8 +116,8 @@ const SECTIONS: Section[] = [
     ],
   },
   {
-    icon: '📋',
-    title: 'Log Aktivitas',
+    icon: '📋', title: 'Log Aktivitas',
+    desc: 'Audit login, gagal & tulis-data',
     roles: 'KHUSUS ADMIN.',
     points: [
       'Mencatat login (termasuk GAGAL + username yang dicoba), logout, register, ganti password, CRUD user, dan semua tulis-data modul.',
@@ -124,8 +126,8 @@ const SECTIONS: Section[] = [
     ],
   },
   {
-    icon: '⚙️',
-    title: 'Pengaturan',
+    icon: '⚙️', title: 'Pengaturan',
+    desc: 'Profil, password & warna tema',
     points: [
       'Ubah nama & email sendiri (username & role tidak bisa diubah).',
       'Ganti password: wajib tahu password lama, min. 6 karakter.',
@@ -136,10 +138,11 @@ const SECTIONS: Section[] = [
 
 export default function Bantuan() {
   const { user } = useAuth();
+  const [open, setOpen] = useState<Section | null>(null);
   const isInvestor = user?.role === 'investor';
 
   return (
-    <div className="mx-auto max-w-3xl space-y-4">
+    <div className="mx-auto max-w-5xl space-y-4">
       <PageHead title="📖 Bantuan Penggunaan" />
       <div className="rounded-2xl bg-brand-100 p-4 text-sm text-brand-800">
         <b>Hak akses Anda: {user?.role}</b>
@@ -149,30 +152,46 @@ export default function Bantuan() {
             ? ' — tulis data milik sendiri; data Biaya/Kas difilter milik Anda.'
             : ' — akses penuh termasuk Pengguna & Log Aktivitas.'}
       </div>
-      {SECTIONS.map((s) => (
-        <details key={s.title} className="group rounded-2xl bg-white shadow">
-          <summary className="flex cursor-pointer list-none items-center gap-2 px-5 py-4 font-semibold text-gray-900">
-            <span>{s.icon}</span>
-            {s.title}
-            <span className="ml-auto text-gray-400 transition group-open:rotate-90">▶</span>
-          </summary>
-          <div className="space-y-1 px-5 pb-4 text-sm text-gray-600">
-            {s.roles && (
+
+      {/* Grid tile ala Fiori launchpad */}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {SECTIONS.map((s) => (
+          <button
+            key={s.title}
+            onClick={() => setOpen(s)}
+            className="group rounded-2xl bg-white p-5 text-left shadow transition hover:-translate-y-0.5 hover:shadow-lg"
+          >
+            <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-100 text-2xl transition group-hover:bg-brand-200">
+              {s.icon}
+            </span>
+            <p className="mt-3 font-bold text-gray-900">{s.title}</p>
+            <p className="mt-0.5 text-sm text-gray-500">{s.desc}</p>
+            <p className="mt-2 text-xs font-medium text-brand-700">
+              {s.roles ?? 'Semua role'} →
+            </p>
+          </button>
+        ))}
+      </div>
+      <p className="text-center text-xs text-gray-400">
+        Klik tile untuk panduan lengkap. Filter tanggal "Sampai" mencakup seharian penuh.
+      </p>
+
+      {open && (
+        <Modal title={`${open.icon} ${open.title}`} onClose={() => setOpen(null)}>
+          <div className="space-y-3">
+            {open.roles && (
               <p className="rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700">
-                {s.roles}
+                {open.roles}
               </p>
             )}
-            <ul className="list-disc space-y-1 pl-5">
-              {s.points.map((p, i) => (
+            <ul className="list-disc space-y-1.5 pl-5 text-sm text-gray-600">
+              {open.points.map((p, i) => (
                 <li key={i}>{p}</li>
               ))}
             </ul>
           </div>
-        </details>
-      ))}
-      <p className="text-center text-xs text-gray-400">
-        Filter tanggal "Sampai" mencakup seharian penuh. List memakai tombol "Muat lagi" (20 per halaman).
-      </p>
+        </Modal>
+      )}
     </div>
   );
 }
