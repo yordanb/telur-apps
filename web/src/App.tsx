@@ -12,6 +12,7 @@ import Biaya from './pages/Biaya';
 import Penjualan from './pages/Penjualan';
 import Kas from './pages/Kas';
 import Pengguna from './pages/Pengguna';
+import Pengaturan from './pages/Pengaturan';
 
 function RequireAuth({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
@@ -43,6 +44,7 @@ export default function App() {
       <Route path="/penjualan" element={authed(<Penjualan />)} />
       <Route path="/kas" element={authed(<Kas />)} />
       <Route path="/pengguna" element={authed(<Pengguna />)} />
+      <Route path="/pengaturan" element={authed(<Pengaturan />)} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

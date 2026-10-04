@@ -3,9 +3,9 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from datetime import timedelta
 from app.database import get_db
-from app.auth import authenticate_user, create_access_token, get_password_hash, get_current_active_user
+from app.auth import authenticate_user, create_access_token, get_password_hash, get_current_active_user, verify_password
 from app.models import User, UserRole
-from app.schemas import UserCreate, UserResponse, Token, UserUpdate
+from app.schemas import UserCreate, UserResponse, Token, UserUpdate, PasswordChange
 from app.config import get_settings
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
@@ -88,3 +88,25 @@ def update_user_me(
     db.commit()
     db.refresh(current_user)
     return current_user
+
+
+@router.put("/change-password")
+def change_password(
+    payload: PasswordChange,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    user = db.query(User).filter(User.id == current_user.id).first()
+    if user is None or not verify_password(payload.old_password, user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password lama salah",
+        )
+    if len(payload.new_password) < 6:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password baru minimal 6 karakter",
+        )
+    user.hashed_password = get_password_hash(payload.new_password)
+    db.commit()
+    return {"message": "Password berhasil diubah"}

@@ -24,7 +24,10 @@ skema di sini yang berlaku, bukan tebakan).
 - Login: `POST /api/auth/login` body **form-urlencoded**
   (`username=...&password=...`) → `{access_token, token_type}`
 - Selanjutnya: header `Authorization: Bearer <token>` (JWT, expiry 1440 mnt)
-- Profil: `GET /api/auth/me`
+- Profil: `GET /api/auth/me`; ubah profil: `PUT /api/auth/me`
+  (hanya `email`/`full_name` — role tidak bisa diubah sendiri)
+- Ganti password: `PUT /api/auth/change-password`
+  `{old_password, new_password(min 6)}` → 400 jika password lama salah
 - Register publik `POST /api/auth/register` hanya menghasilkan role
   **pegawai** (kecuali DB kosong → bootstrap admin). Jangan andalkan untuk
   membuat admin/investor — itu lewat Manajemen User.
@@ -150,3 +153,8 @@ Hak akses wajib meniru mobile: investor read-only, Manajemen User admin only.
   auto, subkategori operasional), Penjualan (total server), Kas (kategori
   per arah), Pengguna (admin only). Filter tanggal + "Muat lagi",
   investor read-only (tombol tulis disembunyikan).
+- Web+API Pengaturan (2026-10-04): halaman Pengaturan (ubah nama/email +
+  ganti password) + endpoint baru `PUT /api/auth/change-password`
+  (verifikasi password lama, min 6). Diuji lokal: compileall + impor
+  router + unit logika (400 salah/pendek, sukses+hash). Perlu deploy
+  backend juga: `git pull && cd backend && docker compose up -d --build`.

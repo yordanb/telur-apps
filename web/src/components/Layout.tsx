@@ -21,6 +21,7 @@ const NAV: NavItem[] = [
   { to: '/penjualan', label: 'Penjualan', icon: '💰' },
   { to: '/kas', label: 'Kas', icon: '👛' },
   { to: '/pengguna', label: 'Pengguna', icon: '👥', adminOnly: true },
+  { to: '/pengaturan', label: 'Pengaturan', icon: '⚙️' },
 ];
 
 export default function Layout({ children }: { children: ReactNode }) {

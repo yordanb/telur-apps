@@ -63,6 +63,49 @@ export function logout() {
   clearToken();
 }
 
+/** PUT /api/auth/me — hanya email & nama (role tidak bisa diubah sendiri). */
+export async function updateMe(data: { email?: string; full_name?: string }): Promise<User> {
+  const res = await fetch(`${API_URL}/auth/me`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify(data),
+  });
+  if (res.status === 401) {
+    clearToken();
+    throw new Error('Sesi berakhir, silakan login kembali');
+  }
+  if (!res.ok) {
+    let msg = `Gagal menyimpan (${res.status})`;
+    try {
+      const d = (await res.json())?.detail;
+      if (typeof d === 'string') msg = d;
+    } catch { /* abaikan */ }
+    throw new Error(msg);
+  }
+  return (await res.json()) as User;
+}
+
+/** PUT /api/auth/change-password */
+export async function changePassword(old_password: string, new_password: string): Promise<void> {
+  const res = await fetch(`${API_URL}/auth/change-password`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ old_password, new_password }),
+  });
+  if (res.status === 401) {
+    clearToken();
+    throw new Error('Sesi berakhir, silakan login kembali');
+  }
+  if (!res.ok) {
+    let msg = `Gagal (${res.status})`;
+    try {
+      const d = (await res.json())?.detail;
+      if (typeof d === 'string') msg = d;
+    } catch { /* abaikan */ }
+    throw new Error(msg);
+  }
+}
+
 // ---------- util ----------
 
 export const fmtNum = (n: number) => new Intl.NumberFormat('id-ID').format(n);
