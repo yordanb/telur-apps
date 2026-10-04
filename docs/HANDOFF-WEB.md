@@ -142,7 +142,16 @@ Hak akses wajib meniru mobile: investor read-only, Manajemen User admin only.
 - Akun uji: `admin/admin123` (admin). Pegawai: `imam`. Investor: `goyu`, `rosi`.
 - Data produksi = data dummy trial; rencana reset via TRUNCATE sebelum go-live
   (belum dieksekusi saat dokumen ini ditulis).
-- Web dashboard: **belum dimulai** (tab baru).
+- Web dashboard: **scaffold + modul berjalan** (React 18 + Vite 5 + TS +
+  Tailwind + react-router 6, basis TailAdmin; `web/` + Dockerfile multi-stage
+  + compose terpisah `endog-web:8801` + nginx SPA fallback). Halaman:
+  Login (JWT), Dashboard, Statistik, Produksi, Ayam (+foto), Pakan
+  (pakai `/feedings/` + `/feedings/stock`), Biaya, Penjualan, Kas,
+  Pengguna (admin), Pengaturan (profil + ganti password).
+  Belum ada: halaman Keuangan & Produktivitas.
+- Backend bertambah (oleh tab web): `PUT /api/auth/change-password`
+  (`old_password`, `new_password` min 6; 400 jika salah/pendek).
+- README.md repo diperbarui mengikuti implementasi (2026-10-04).
 - Web scaffold `web/` (2026-10-04): Vite React-TS + Tailwind + React Router,
   halaman Login (JWT), Dockerfile multi-stage + nginx.conf + docker-compose
   terpisah (`endog-web` 8801:80). Sudah deploy VPS, Login jalan.

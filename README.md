@@ -1,216 +1,147 @@
-# Egg Production App
+# Endog — Pencatatan Produksi Telur Ayam
 
-Aplikasi Flutter untuk pencatatan produksi telur ayam dengan backend Python FastAPI.
+Aplikasi pencatatan produksi telur ayam: **backend FastAPI** + **aplikasi Android
+(Flutter)** + **web dashboard manajemen (React)**.
 
 ## Fitur
 
-- **Pencatatan Produksi Telur**: Catat produksi telur harian (total, baik, rusak, berat rata-rata)
-- **Manajemen Ayam**: Kelola data ayam (total, sehat, sakit, mati, baru)
-- **Pencatatan Pakan**: Catat konsumsi pakan dan biaya
-- **Pencatatan Biaya**: Catat biaya operasional lainnya
-- **Statistik & Laporan**: Visualisasi data produksi, ayam, dan biaya
-- **Multi-User**: Role Admin dan Pegawai
-- **Mode Offline**: Data tersimpan lokal saat offline, sync saat online
-- **Notifikasi**: Pengingat harian untuk pencatatan
+- **Produksi Telur**: total harian + **rincian per ekor ayam** (ID ayam, jumlah butir)
+- **Register Ayam**: identitas per ekor (kode unik, nama, jenis, status) + **foto profil**
+- **Produktivitas Ayam**: telur/ekor/hari, laying rate %, peringkat teratas/terbawah
+- **Pemberian Pakan (Feeding)**: catat pakan yang diberikan + **stok sisa per jenis pakan** (dibatasi stok, tidak bisa over)
+- **Biaya**: pakan (otomatis tercatat saat beli, lengkap dengan kg & harga/kg), obat-obatan, operasional + subkategori kandang, lain-lain
+- **Penjualan Telur**: per butir / per kg, total dihitung server
+- **Keuangan (neraca)**: pemasukan vs pengeluaran, saldo, grafik arus kas, filter periode
+- **Transaksi Kas**: pemasukan lain (ayam afkir, modal) & pengeluaran lain
+- **Statistik**: grafik produksi, ayam, biaya, pendapatan
+- **3 Role**: admin (semua + kelola user), pegawai (input & lihat milik sendiri), investor (lihat semua, read-only)
+- **Mode Offline (Android)**: catat tanpa internet → antrean lokal → terkirim otomatis saat online
+- **Profil & ganti password** langsung dari aplikasi/web
+- **Notifikasi harian** (Android), pilihan 3 warna tema
 
 ## Struktur Project
 
 ```
-egg-production-app/
-├── backend/                 # Python FastAPI Backend
+.
+├── backend/                 # FastAPI + PostgreSQL 15 (Docker)
 │   ├── app/
-│   │   ├── routers/        # API endpoints
-│   │   ├── models.py       # Database models
+│   │   ├── routers/        # auth, users, egg_production (+rincian),
+│   │   │                   # chickens (+foto), chicken_management,
+│   │   │                   # feedings (+stok), feed_records (pensiun),
+│   │   │                   # cost_records, egg_sales, cash_transactions,
+│   │   │                   # statistics
+│   │   ├── models.py       # SQLAlchemy models
 │   │   ├── schemas.py      # Pydantic schemas
-│   │   ├── auth.py         # Authentication
-│   │   ├── database.py     # Database connection
-│   │   ├── config.py       # Configuration
-│   │   └── main.py         # Entry point
-│   ├── Dockerfile
-│   ├── docker-compose.yml
+│   │   ├── auth.py         # JWT guards (require_editor/require_admin)
+│   │   └── main.py         # Entry point + migrasi startup + /uploads
+│   ├── docker-compose.yml  # egg-api (8800), egg-db (5445), egg-backup
 │   └── requirements.txt
-│
-└── frontend/               # Flutter Frontend
-    ├── lib/
-    │   ├── models/         # Data models
-    │   ├── services/       # API & local storage services
-    │   ├── providers/      # State management
-    │   ├── screens/        # UI screens
-    │   ├── widgets/        # Reusable widgets
-    │   └── utils/          # Utilities
-    ├── pubspec.yaml
-    └── main.dart
+├── frontend/               # Flutter Android (Riverpod + GoRouter)
+│   └── lib/
+│       ├── models/ providers/ screens/ services/ widgets/ utils/
+├── web/                    # React + Vite + TS + Tailwind (TailAdmin)
+│   ├── src/pages/          # Login, Dashboard, Statistik, Produksi, Ayam,
+│   │                       # Pakan, Biaya, Penjualan, Kas, Pengguna, Pengaturan
+│   ├── Dockerfile          # multi-stage node → nginx
+│   ├── docker-compose.yml  # endog-web (8801), lifecycle terpisah
+│   └── nginx.conf          # SPA fallback
+└── docs/
+    └── HANDOFF-WEB.md      # Konteks antar-sesi (wajib dibaca tab baru)
 ```
 
-## Setup Backend
-
-### Prerequisites
-- Python 3.11+
-- Docker & Docker Compose
-- PostgreSQL (atau gunakan Docker)
-
-### Local Development
-
-1. Clone repository
-2. Buat virtual environment:
-   ```bash
-   cd backend
-   python -m venv venv
-   source venv/bin/activate  # Linux/Mac
-   venv\Scripts\activate     # Windows
-   ```
-
-3. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. Copy `.env.example` ke `.env` dan sesuaikan:
-   ```bash
-   cp .env.example .env
-   ```
-
-5. Jalankan aplikasi:
-   ```bash
-   uvicorn app.main:app --reload
-   ```
-
-6. API documentation: `http://localhost:8000/docs`
-
-### Docker Deployment
-
-1. Build dan jalankan:
-   ```bash
-   docker-compose up -d
-   ```
-
-2. API akan berjalan di `http://localhost:8000`
-
-## Setup Frontend
-
-### Prerequisites
-- Flutter SDK 3.0+
-- Android Studio / VS Code
-
-### Configuration
-
-1. Update `lib/services/api_service.dart`:
-   ```dart
-   static const String baseUrl = 'http://YOUR_VPS_IP:8000/api';
-   ```
-
-2. Install dependencies:
-   ```bash
-   cd frontend
-   flutter pub get
-   ```
-
-3. Jalankan aplikasi:
-   ```bash
-   flutter run
-   ```
-
-## Panduan Deploy ke VPS
-
-### 1. Setup Database
+## Setup Backend (Docker, dipakai produksi)
 
 ```bash
-# Pull dan jalankan PostgreSQL container
-docker run -d \
-  --name egg_postgres \
-  -e POSTGRES_USER=postgres \
-  -e POSTGRES_PASSWORD=your_secure_password \
-  -e POSTGRES_DB=egg_production \
-  -p 5432:5432 \
-  -v postgres_data:/var/lib/postgresql/data \
-  postgres:15
+cd backend
+cp .env.example .env   # sesuaikan kredensial & SECRET_KEY
+docker compose up -d --build
 ```
 
-### 2. Setup Backend
+- API: `http://localhost:8800` → docs di `/docs`, skema di `/openapi.json`
+- DB: `localhost:5445` (PostgreSQL 15)
+- Backup otomatis tiap 6 jam → `backend/backups/` (dump DB + arsip foto)
+- Migrasi skema jalan otomatis saat container start (lihat `app/main.py`)
+
+> ⚠️ Jangan pernah `docker compose down -v` / `volume prune` di server —
+> menghapus seluruh data.
+
+## Deploy ke VPS
 
 ```bash
-# Clone project ke VPS
-git clone <your-repo> /opt/egg-production
-cd /opt/egg-production/backend
-
-# Buat .env file
-cat > .env << EOF
-DATABASE_URL=postgresql://postgres:your_secure_password@localhost:5432/egg_production
-SECRET_KEY=$(openssl rand -hex 32)
-ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=1440
-DEBUG=False
-EOF
-
-# Build dan jalankan
-docker-compose up -d
+cd /opt/projects/telur-apps
+git pull
+cd backend && docker compose up -d --build     # tanpa -v
+cd ../web && cp .env.example .env && docker compose up -d --build
 ```
 
-### 3. Setup Nginx Reverse Proxy
+Routing Nginx (`mibt-nginx`, `docker exec mibt-nginx nginx -s reload` sesudah edit):
+`/`, → web (`127.0.0.1:8801`); `/api/`, `/docs`, `/openapi.json`, `/uploads/` → API (`127.0.0.1:8800`).
+Domain produksi: `https://egg.mibt.my.id`.
+
+## Setup Android
 
 ```bash
-# Install Nginx
-sudo apt update
-sudo apt install nginx
-
-# Buat konfigurasi
-sudo nano /etc/nginx/sites-available/egg-production
+cd frontend
+flutter pub get
+flutter build apk --release
+# hasil: build/app/outputs/flutter-apk/app-release.apk
 ```
 
-```nginx
-server {
-    listen 80;
-    server_name your-domain.com;
+Base URL API: `frontend/lib/services/api_service.dart` (`baseUrl`,
+`serverRoot` untuk foto).
 
-    location / {
-        proxy_pass http://localhost:8000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-}
-```
+## Setup Web Dashboard
 
 ```bash
-# Enable site
-sudo ln -s /etc/nginx/sites-available/egg-production /etc/nginx/sites-enabled/
-sudo nginx -t
-sudo systemctl restart nginx
+cd web
+cp .env.example .env   # VITE_API_URL=https://egg.mibt.my.id/api (jangan commit .env)
+npm install
+npm run dev            # http://localhost:5173
 ```
 
-### 4. Setup SSL dengan Let's Encrypt
+Docker (terpisah dari backend):
 
 ```bash
-sudo apt install certbot python3-certbot-nginx
-sudo certbot --nginx -d your-domain.com
+cd web
+docker compose up -d --build   # endog-web di 8801:80
 ```
 
-### 5. Update Flutter API URL
+Login memakai `POST {VITE_API_URL}/auth/login` (form-urlencoded), JWT di
+`localStorage`, guard role meniru matriks di bawah.
 
-Update `frontend/lib/services/api_service.dart`:
-```dart
-static const String baseUrl = 'https://your-domain.com/api';
-```
+## Role & Hak Akses
 
-## API Endpoints
+| Kemampuan | admin | pegawai | investor |
+|---|---|---|---|
+| Lihat semua data | ✅ | ❌ (milik sendiri) | ✅ |
+| Input/edit/hapus data | ✅ | ✅ milik sendiri | ❌ read-only |
+| Manajemen user | ✅ | ❌ | ❌ |
 
-| Method | Endpoint | Deskripsi |
-|--------|----------|-----------|
-| POST | `/api/auth/register` | Register user baru |
-| POST | `/api/auth/login` | Login |
-| GET | `/api/auth/me` | Get current user info |
-| GET | `/api/egg-productions/` | List produksi telur |
-| POST | `/api/egg-productions/` | Tambah produksi telur |
-| GET | `/api/chicken-managements/` | List manajemen ayam |
-| POST | `/api/chicken-managements/` | Tambah manajemen ayam |
-| GET | `/api/feed-records/` | List pakan |
-| POST | `/api/feed-records/` | Tambah pakan |
-| GET | `/api/cost-records/` | List biaya |
-| POST | `/api/cost-records/` | Tambah biaya |
-| GET | `/api/statistics/daily` | Statistik harian |
-| GET | `/api/statistics/monthly` | Statistik bulanan |
-| GET | `/api/users/` | List users (admin only) |
+Pengecualian: register ayam & stok pakan terlihat semua role (aset kandang
+bersama); hapus ayam hanya pemilik/admin.
+
+## API Endpoints (ringkas)
+
+| Method | Endpoint | Keterangan |
+|---|---|---|
+| POST | `/api/auth/login` | Login (form-urlencoded) → JWT |
+| POST | `/api/auth/register` | Publik, selalu jadi pegawai (bootstrap admin jika DB kosong) |
+| GET/PUT | `/api/auth/me` | Profil / update profil |
+| PUT | `/api/auth/change-password` | Ganti password (`old_password`, `new_password` min 6) |
+| CRUD | `/api/egg-productions/` | + `details[]` per ayam; total dihitung server |
+| CRUD | `/api/chickens/` | Register ayam; `POST /{id}/photo` upload foto |
+| CRUD | `/api/feedings/` | Pemberian pakan (validasi stok); `GET /feedings/stock` sisa global |
+| CRUD | `/api/cost-records/` | Biaya; kategori pakan wajib `feed_type`+kg+harga |
+| CRUD | `/api/egg-sales/` | Penjualan; `total_price` dihitung server |
+| CRUD | `/api/cash-transactions/` | Kas masuk/keluar manual |
+| GET | `/api/statistics/daily`, `/monthly` | Agregat produksi, biaya, pendapatan, kas |
+| CRUD | `/api/users/` | Admin only |
+| GET | `/uploads/<file>` | File statis foto ayam |
+
+Tabel `feed_records` sudah **dipensiunkan** (datanya dimigrasikan otomatis ke
+Biaya-pakan saat start; jangan dipakai untuk fitur baru).
+
+Skema lengkap selalu di `/openapi.json` — itu acuan yang berlaku.
 
 ## License
 
