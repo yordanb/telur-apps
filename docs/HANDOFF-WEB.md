@@ -205,3 +205,5 @@ Hak akses wajib meniru mobile: investor read-only, Manajemen User admin only.
   Deploy backend + web.
 - Sidebar mini (2026-10-04): tombol ◀/▶, mode ikon saja (w-16, tooltip),
   pilihan tersimpan per browser (`endog_sidebar`).
+- Bantuan (2026-10-04): halaman 📖 panduan per-menu (aturan + hak akses,
+  banner sesuai role), akordeon native. Web saja.

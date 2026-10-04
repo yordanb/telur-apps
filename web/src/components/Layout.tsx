@@ -25,6 +25,7 @@ const NAV: NavItem[] = [
   { to: '/produktivitas', label: 'Produktivitas', icon: '🏆' },
   { to: '/pengguna', label: 'Pengguna', icon: '👥', adminOnly: true },
   { to: '/log', label: 'Log Aktivitas', icon: '📋', adminOnly: true },
+  { to: '/bantuan', label: 'Bantuan', icon: '📖' },
   { to: '/pengaturan', label: 'Pengaturan', icon: '⚙️' },
 ];
 

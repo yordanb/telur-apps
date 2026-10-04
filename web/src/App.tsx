@@ -12,6 +12,7 @@ import Penjualan from './pages/Penjualan';
 import Kas from './pages/Kas';
 import Pengguna from './pages/Pengguna';
 import LogAktivitas from './pages/LogAktivitas';
+import Bantuan from './pages/Bantuan';
 import Pengaturan from './pages/Pengaturan';
 
 // Halaman bergrafik dimuat malas agar bundle awal tetap kecil (recharts).
@@ -57,6 +58,7 @@ export default function App() {
       <Route path="/produktivitas" element={authed(<Produktivitas />)} />
       <Route path="/pengguna" element={authed(<Pengguna />)} />
       <Route path="/log" element={authed(<LogAktivitas />)} />
+      <Route path="/bantuan" element={authed(<Bantuan />)} />
       <Route path="/pengaturan" element={authed(<Pengaturan />)} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
