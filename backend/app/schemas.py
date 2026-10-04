@@ -21,11 +21,13 @@ class UserUpdate(BaseModel):
     full_name: Optional[str] = None
     role: Optional[UserRole] = None
     is_active: Optional[int] = None
+    theme_color: Optional[str] = None
 
 
 class UserResponse(UserBase):
     id: int
     is_active: int
+    theme_color: str = "oranye"
     created_at: datetime
 
     class Config:

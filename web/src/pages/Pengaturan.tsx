@@ -1,10 +1,13 @@
 import { useState } from 'react';
 import { useAuth } from '../lib/auth';
+import { THEMES, useTheme } from '../lib/theme';
 import { changePassword, updateMe } from '../lib/api';
 import { Btn, ErrorBox, Field, PageHead, inputCls } from '../components/ui';
 
 export default function Pengaturan() {
   const { user, refresh } = useAuth();
+  const { theme, setTheme } = useTheme();
+  const [themeErr, setThemeErr] = useState<string | null>(null);
 
   const [name, setName] = useState(user?.full_name ?? '');
   const [email, setEmail] = useState(user?.email ?? '');
@@ -89,6 +92,37 @@ export default function Pengaturan() {
           <Btn kind="primary" disabled={savingProfile} onClick={() => void onSaveProfile()}>
             {savingProfile ? 'Menyimpan…' : 'Simpan profil'}
           </Btn>
+        </div>
+      </div>
+
+      <div className="rounded-2xl bg-white p-5 shadow">
+        <h2 className="font-semibold text-gray-900">Warna tema</h2>
+        <p className="mt-1 text-sm text-gray-500">
+          Tersimpan di profil — ikut pindah device. Berlaku untuk semua role.
+        </p>
+        <ErrorBox msg={themeErr} />
+        <div className="mt-3 flex gap-2">
+          {THEMES.map((t) => (
+            <button
+              key={t.key}
+              onClick={() => {
+                setThemeErr(null);
+                setTheme(t.key).catch((e: unknown) =>
+                  setThemeErr(e instanceof Error ? e.message : 'Gagal menyimpan tema'),
+                );
+              }}
+              className={`flex flex-1 items-center justify-center gap-2 rounded-xl border-2 px-3 py-2.5 text-sm font-medium transition ${
+                theme === t.key ? 'border-gray-900 bg-gray-50' : 'border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              <span
+                className="inline-block h-5 w-5 rounded-full"
+                style={{ backgroundColor: t.swatch }}
+              />
+              {t.label}
+              {theme === t.key && <span>✓</span>}
+            </button>
+          ))}
         </div>
       </div>
 

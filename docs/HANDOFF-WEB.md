@@ -25,7 +25,8 @@ skema di sini yang berlaku, bukan tebakan).
   (`username=...&password=...`) → `{access_token, token_type}`
 - Selanjutnya: header `Authorization: Bearer <token>` (JWT, expiry 1440 mnt)
 - Profil: `GET /api/auth/me`; ubah profil: `PUT /api/auth/me`
-  (hanya `email`/`full_name` — role tidak bisa diubah sendiri)
+  (hanya `email`/`full_name`/`theme_color` — role tidak bisa diubah sendiri;
+  `theme_color` ∈ oranye/hijau/biru, 400 jika lain)
 - Ganti password: `PUT /api/auth/change-password`
   `{old_password, new_password(min 6)}` → 400 jika password lama salah
 - Logout: `POST /api/auth/logout` (butuh token; token dibuang di klien)
@@ -85,6 +86,9 @@ PostgreSQL 15. Tabel: `users`, `egg_productions`, `egg_production_details`,
 `feedings`, `cost_records`, `egg_sales`, `cash_transactions`,
 `activity_logs` (audit: user, aksi, detail, IP, waktu; dibuat via
 `create_all`, tanpa migrasi DDL).
+Kolom tambah manual (pola `ADD COLUMN IF NOT EXISTS` di `main.py`):
+`cost_records.subcategory`, kolom pakan di biaya, `users.theme_color`
+(oranye/hijau/biru, default oranye — tema per-profil meniru Android).
 Enum: `userrole` (admin/pegawai/investor), `saleunit`, `cashdirection`.
 
 Migrasi jalan otomatis saat container start (`backend/app/main.py`):
@@ -194,3 +198,8 @@ Hak akses wajib meniru mobile: investor read-only, Manajemen User admin only.
   list web menyembunyikan data hari-H (terlihat di Log: 4 baris ada di DB
   tapi halaman kosong). Kini inklusif seharian penuh di 9 router list.
   Mobile tidak terdampak (tidak pernah kirim start/end_date).
+- Tema per-profil (2026-10-04): kolom `users.theme_color` + migrasi
+  `ADD COLUMN IF NOT EXISTS`, `PUT /me` terima tema (whitelist,
+  semua role), web: picker di Pengaturan + Tailwind brand via CSS var
+  (`data-theme`, grafik ikut). Diuji: unit whitelist + `npm run build`.
+  Deploy backend + web.

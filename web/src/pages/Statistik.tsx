@@ -104,7 +104,7 @@ export default function Statistik() {
                       ]}
                     />
                     <Legend />
-                    <Bar yAxisId="telur" dataKey="telur" name="Telur" fill="#ea580c" radius={[4, 4, 0, 0]} />
+                    <Bar yAxisId="telur" dataKey="telur" name="Telur" fill="rgb(var(--brand-600))" radius={[4, 4, 0, 0]} />
                     <Line yAxisId="rp" type="monotone" dataKey="pendapatan" name="Pendapatan" stroke="#16a34a" strokeWidth={2} dot={false} />
                   </ComposedChart>
                 </ResponsiveContainer>

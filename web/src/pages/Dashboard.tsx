@@ -114,7 +114,7 @@ export default function Dashboard() {
                   labelFormatter={(_, payload) => payload?.[0]?.payload?.full ?? ''}
                   formatter={(v) => [`${fmtNum(Number(v))} butir`, 'Telur']}
                 />
-                <Bar dataKey="telur" name="Telur" fill="#ea580c" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="telur" name="Telur" fill="rgb(var(--brand-600))" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>

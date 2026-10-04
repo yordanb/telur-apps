@@ -129,6 +129,13 @@ def update_user_me(
         current_user.email = user_update.email
     if user_update.full_name:
         current_user.full_name = user_update.full_name
+    if user_update.theme_color is not None:
+        if user_update.theme_color not in ("oranye", "hijau", "biru"):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="theme_color harus oranye, hijau, atau biru",
+            )
+        current_user.theme_color = user_update.theme_color
 
     db.commit()
     db.refresh(current_user)

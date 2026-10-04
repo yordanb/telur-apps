@@ -74,6 +74,23 @@ def _ensure_cost_feed_columns():
 _ensure_cost_feed_columns()
 
 
+def _ensure_user_theme_column():
+    """Kolom users.theme_color (tema per-profil: oranye/hijau/biru)."""
+    try:
+        with engine.connect() as conn:
+            conn = conn.execution_options(isolation_level="AUTOCOMMIT")
+            conn.execute(text(
+                "ALTER TABLE users "
+                "ADD COLUMN IF NOT EXISTS theme_color VARCHAR(20) DEFAULT 'oranye'"
+            ))
+    except Exception:
+        # Tabel belum ada — akan dibuat lengkap oleh create_all
+        pass
+
+
+_ensure_user_theme_column()
+
+
 def _migrate_feed_purchases_to_costs():
     """Sekali jalan: pindahkan pembelian pakan lama (feed_records) menjadi
     Biaya kategori pakan, lalu hapus baris asalnya agar tidak ganda.

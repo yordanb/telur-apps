@@ -10,6 +10,7 @@ export interface User {
   full_name?: string | null;
   role: 'admin' | 'pegawai' | 'investor';
   is_active: boolean;
+  theme_color: string;
 }
 
 const TOKEN_KEY = 'endog_token';
@@ -70,8 +71,8 @@ export function logout() {
   clearToken();
 }
 
-/** PUT /api/auth/me — hanya email & nama (role tidak bisa diubah sendiri). */
-export async function updateMe(data: { email?: string; full_name?: string }): Promise<User> {
+/** PUT /api/auth/me — hanya email/nama/tema (role tidak bisa diubah sendiri). */
+export async function updateMe(data: { email?: string; full_name?: string; theme_color?: string }): Promise<User> {
   const res = await fetch(`${API_URL}/auth/me`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', ...authHeaders() },

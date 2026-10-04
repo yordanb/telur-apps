@@ -31,6 +31,7 @@ class User(Base):
     full_name = Column(String(100), nullable=False)
     role = Column(Enum(UserRole), default=UserRole.pegawai)
     is_active = Column(Integer, default=1)
+    theme_color = Column(String(20), default="oranye")  # oranye | hijau | biru
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
