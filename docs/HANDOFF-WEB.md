@@ -209,5 +209,8 @@ Hak akses wajib meniru mobile: investor read-only, Manajemen User admin only.
   pilihan tersimpan per browser (`endog_sidebar`).
 - Bantuan (2026-10-04): halaman 📖 panduan per-menu (aturan + hak akses,
   banner sesuai role), grid tile Fiori + popup detail. Web saja.
+- Idle timeout (2026-10-04): 30 mnt tanpa aktivitas → logout otomatis;
+  popup peringatan 2 mnt sebelumnya + "Tetap masuk". Multi-tab sinkron
+  via localStorage. Web saja.
 - Login info IP (2026-10-04): catatan JWT dihapus, tampil "IP Anda: …"
   dari `GET /api/auth/client-ip`. Deploy backend + web.

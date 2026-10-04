@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
+import IdleGuard from './IdleGuard';
 
 interface NavItem {
   to: string;
@@ -139,6 +140,7 @@ export default function Layout({ children }: { children: ReactNode }) {
           </div>
         </header>
         <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6">{children}</main>
+        <IdleGuard />
       </div>
     </div>
   );
