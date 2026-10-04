@@ -34,60 +34,10 @@ services:
     networks:
       - egg-network
 
-  # Backup otomatis: pg_dump tiap 6 jam, simpan 14 hari di backend/backups/
-  # Restore: gunzip < backups/egg_XXXX.sql.gz | docker exec -i egg-db psql -U <user> -d <db>
-  backup:
-    image: postgres:15
-    container_name: egg-backup
-    depends_on:
-      - db
-    environment:
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB}
-      - PGPASSWORD=${POSTGRES_PASSWORD}
-    volumes:
-      - ./backups:/backups
-      - uploads:/uploads:ro
-    entrypoint: ["/bin/sh", "-c"]
-    command:
-      - |
-        mkdir -p /backups
-        last_uploads_day=""
-        while true; do
-          ts=$$(date +%Y%m%d_%H%M%S)
-          today=$$(date +%Y%m%d)
-          ok=""
-          for i in $$(seq 1 60); do
-            if pg_dump -h db -U "$${POSTGRES_USER}" "$${POSTGRES_DB}" > /tmp/dump.sql 2>/dev/null; then
-              ok=1; break
-            fi
-            echo "[backup] menunggu db siap (percobaan $$i)"
-            sleep 5
-          done
-          if [ -n "$${ok}" ] && gzip -f /tmp/dump.sql && mv /tmp/dump.sql.gz "/backups/egg_$${ts}.sql.gz"; then
-            echo "[backup] egg_$${ts}.sql.gz OK"
-          else
-            echo "[backup] FAILED $${ts}"
-            rm -f /tmp/dump.sql /tmp/dump.sql.gz
-          fi
-          # Arsip foto ayam 1x sehari (di luar pg_dump).
-          if [ "$${today}" != "$${last_uploads_day}" ]; then
-            if tar -czf "/backups/uploads_$${today}.tar.gz" -C /uploads . 2>/dev/null; then
-              echo "[backup] uploads_$${today}.tar.gz OK"
-              last_uploads_day="$${today}"
-            else
-              echo "[backup] uploads FAILED $${today}"
-              rm -f "/backups/uploads_$${today}.tar.gz"
-            fi
-          fi
-          find /backups -name 'egg_*.sql.gz' -mtime +14 -delete
-          find /backups -name 'uploads_*.tar.gz' -mtime +14 -delete
-          sleep 21600
-        done
-    restart: unless-stopped
-    networks:
-      - egg-network
+  # Backup otomatis dilepas (2026-10-04): pemilik tidak memakai egg-backup.
+  # Dump manual bila perlu:
+  #   docker exec egg-db pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB" | gzip > backups/manual-$(date +%Y%m%d_%H%M%S).sql.gz
+  # File lama di backend/backups/ tetap tersimpan (bind mount, tidak ikut terhapus).
 
 networks:
   egg-network:

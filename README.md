@@ -59,7 +59,7 @@ docker compose up -d --build
 
 - API: `http://localhost:8800` → docs di `/docs`, skema di `/openapi.json`
 - DB: `localhost:5445` (PostgreSQL 15)
-- Backup otomatis tiap 6 jam → `backend/backups/` (dump DB + arsip foto)
+- Backup: manual bila perlu (lihat komentar di `backend/docker-compose.yml`); file lama di `backend/backups/`
 - Migrasi skema jalan otomatis saat container start (lihat `app/main.py`)
 
 > ⚠️ Jangan pernah `docker compose down -v` / `volume prune` di server —
