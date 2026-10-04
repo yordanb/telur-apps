@@ -104,12 +104,23 @@ permission & aturan domain §2**.
 
 ## 6. Rencana web dashboard (dikerjakan di tab baru)
 
-Lingkup usulan ( Inline dengan mobile): login + guard role di UI,
-dashboard KPI, CRUD 7 modul, Keuangan (saldo+grafik+filter periode),
-Produktivitas ayam, Manajemen User (admin only, dengan pesan error inline —
-jangan ulangi bug "popup diam" yang pernah ada).
-Keputusan yang harus diisi tab web: stack (usulan: Next.js/React +
-Tailwind), folder `web/`, hosting (VPS yang sama? port?).
+Stack (diputuskan): **React + Vite + TypeScript + Tailwind**, basis tema
+**TailAdmin** (aksen oranye Endog), folder `web/`.
+Hak akses wajib meniru mobile: investor read-only, Manajemen User admin only.
+
+### Docker (diputuskan — mengikuti pola backend)
+- `web/Dockerfile` multi-stage: `node:20-alpine` build → `nginx:alpine`
+  serve statis + `web/nginx.conf` (fallback SPA `try_files`).
+- `web/docker-compose.yml` TERPISAH dari backend (lifecycle independen):
+  container `endog-web`, publish host `8801:80`, `restart: unless-stopped`.
+- Config build-time: `VITE_API_URL=https://egg.mibt.my.id/api`
+  (via `web/.env`, contoh di `web/.env.example` — jangan commit `.env`).
+- Routing satu domain (di `mibt-nginx`, dikelola manual di VPS):
+  `/` → `127.0.0.1:8801` (web), `/api/`, `/docs`, `/openapi.json`,
+  `/uploads/` → `127.0.0.1:8800` (egg-api). Lalu
+  `docker exec mibt-nginx nginx -s reload`.
+- Deploy web: `cd web && docker compose up -d --build` (tanpa `-v`,
+  larangan §4 tetap berlaku).
 
 ## 7. Aturan kerja multi-tab (WAJIB)
 
