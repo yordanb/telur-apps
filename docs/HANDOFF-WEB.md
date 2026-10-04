@@ -135,10 +135,10 @@ Hak akses wajib meniru mobile: investor read-only, Manajemen User admin only.
   container `endog-web`, publish host `8801:80`, `restart: unless-stopped`.
 - Config build-time: `VITE_API_URL=https://egg.mibt.my.id/api`
   (via `web/.env`, contoh di `web/.env.example` — jangan commit `.env`).
-- Routing satu domain (di `mibt-nginx`, dikelola manual di VPS):
-  `/` → `127.0.0.1:8801` (web), `/api/`, `/docs`, `/openapi.json`,
-  `/uploads/` → `127.0.0.1:8800` (egg-api). Lalu
-  `docker exec mibt-nginx nginx -s reload`.
+- Routing satu domain (nginx VPS, dikelola manual):
+  `/` → web (`192.168.1.10:8801`), `/api/`, `/uploads/` → `egg-api`
+  (`192.168.1.10:8800`). Lalu `sudo nginx -t && sudo systemctl reload nginx`.
+  (`/docs` & `/openapi.json` belum di-proxy — opsional, pola sama.)
 - Deploy web: `cd web && docker compose up -d --build` (tanpa `-v`,
   larangan §4 tetap berlaku).
 
@@ -179,6 +179,8 @@ Hak akses wajib meniru mobile: investor read-only, Manajemen User admin only.
   auto, subkategori operasional), Penjualan (total server), Kas (kategori
   per arah), Pengguna (admin only). Filter tanggal + "Muat lagi",
   investor read-only (tombol tulis disembunyikan).
+  Fix susulan foto ayam: indikator "Mengunggah…", reset input file,
+  fallback "gambar tidak bisa dimuat" + `location /uploads/` di nginx VPS.
 - Web+API Pengaturan (2026-10-04): halaman Pengaturan (ubah nama/email +
   ganti password) + endpoint baru `PUT /api/auth/change-password`
   (verifikasi password lama, min 6). Diuji lokal: compileall + impor
