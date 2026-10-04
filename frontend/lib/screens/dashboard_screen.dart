@@ -44,8 +44,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       _loadData();
     });
     // Kirim antrean otomatis begitu koneksi kembali.
-    _connectivitySub =
-        Connectivity().onConnectivityChanged.listen((result) {
+    _connectivitySub = Connectivity().onConnectivityChanged.listen((result) {
       if (result != ConnectivityResult.none) {
         _loadData();
       }
@@ -379,7 +378,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
-                          fontSize: 15,
+                          fontSize: 13,
                           letterSpacing: 0.5,
                         ),
                       ),
