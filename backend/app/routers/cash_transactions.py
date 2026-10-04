@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from datetime import date
+from datetime import date, timedelta
 from app.database import get_db
 from app.auth import get_current_active_user, require_editor, can_view_all_data
 from app.models import User, CashTransaction
@@ -50,7 +50,8 @@ def get_cash_transactions(
     if start_date:
         query = query.filter(CashTransaction.date >= start_date)
     if end_date:
-        query = query.filter(CashTransaction.date <= end_date)
+        # end_date inklusif seharian penuh (bukan tengah malam awal hari)
+        query = query.filter(CashTransaction.date < end_date + timedelta(days=1))
     if direction:
         query = query.filter(CashTransaction.direction == direction)
 

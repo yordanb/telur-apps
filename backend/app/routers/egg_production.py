@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session, selectinload
 from typing import List, Optional
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from app.database import get_db
 from app.auth import get_current_active_user, require_editor, can_view_all_data
 from app.models import User, EggProduction, EggProductionDetail, Chicken
@@ -134,7 +134,8 @@ def get_egg_productions(
     if start_date:
         query = query.filter(EggProduction.date >= start_date)
     if end_date:
-        query = query.filter(EggProduction.date <= end_date)
+        # end_date inklusif seharian penuh (bukan tengah malam awal hari)
+        query = query.filter(EggProduction.date < end_date + timedelta(days=1))
 
     productions = (
         query.order_by(EggProduction.date.desc())

@@ -54,6 +54,9 @@ skema di sini yang berlaku, bukan tebakan).
 | Manajemen user | ✅ | ❌ | ❌ |
 
 ### Endpoint (prefix `/api`, pola CRUD identik: list ada filter tanggal + pagination `skip/limit`)
+**Semantik tanggal**: `end_date` inklusif seharian penuh
+(`< end_date + 1 hari`; sebelumnya `<= end_date` = tengah malam awal hari
+sehingga data hari-H tidak muncul).
 
 | Prefix | Modul | Aturan bisnis khusus |
 |---|---|---|
@@ -187,3 +190,7 @@ Hak akses wajib meniru mobile: investor read-only, Manajemen User admin only.
   (middleware). Diuji lokal: compileall + impor router + unit
   (describe_write 9 kasus, log_activity, client_ip). Deploy backend
   + web (keduanya berubah).
+- Bugfix end_date (2026-10-04): `<= end_date` (tengah malam) membuat SEMUA
+  list web menyembunyikan data hari-H (terlihat di Log: 4 baris ada di DB
+  tapi halaman kosong). Kini inklusif seharian penuh di 9 router list.
+  Mobile tidak terdampak (tidak pernah kirim start/end_date).

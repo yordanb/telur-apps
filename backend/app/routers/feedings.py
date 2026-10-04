@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from typing import Dict, List, Optional
-from datetime import date
+from datetime import date, timedelta
 from app.database import get_db
 from app.auth import get_current_active_user, require_editor, can_view_all_data
 from app.models import User, Feeding, CostRecord
@@ -115,7 +115,8 @@ def get_feedings(
     if start_date:
         query = query.filter(Feeding.date >= start_date)
     if end_date:
-        query = query.filter(Feeding.date <= end_date)
+        # end_date inklusif seharian penuh (bukan tengah malam awal hari)
+        query = query.filter(Feeding.date < end_date + timedelta(days=1))
     if feed_type:
         query = query.filter(Feeding.feed_type == feed_type)
 

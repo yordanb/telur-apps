@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from datetime import date
+from datetime import date, timedelta
 from app.database import get_db
 from app.auth import get_current_active_user, require_editor, can_view_all_data
 from app.models import User, CostRecord
@@ -44,7 +44,8 @@ def get_cost_records(
     if start_date:
         query = query.filter(CostRecord.date >= start_date)
     if end_date:
-        query = query.filter(CostRecord.date <= end_date)
+        # end_date inklusif seharian penuh (bukan tengah malam awal hari)
+        query = query.filter(CostRecord.date < end_date + timedelta(days=1))
     if category:
         query = query.filter(CostRecord.category == category)
 

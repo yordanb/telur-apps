@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
 from typing import List, Optional
-from datetime import date
+from datetime import date, timedelta
 from app.database import get_db
 from app.auth import require_admin
 from app.models import User, ActivityLog
@@ -28,7 +28,8 @@ def get_activity_logs(
     if start_date:
         query = query.filter(ActivityLog.created_at >= start_date)
     if end_date:
-        query = query.filter(ActivityLog.created_at <= end_date)
+        # end_date inklusif seharian penuh (bukan tengah malam awal hari)
+        query = query.filter(ActivityLog.created_at < end_date + timedelta(days=1))
     if action:
         query = query.filter(ActivityLog.action == action)
     if username:

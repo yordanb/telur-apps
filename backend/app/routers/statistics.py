@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session, aliased
 from sqlalchemy import func, extract, and_
 from typing import List, Optional
-from datetime import date
+from datetime import date, timedelta
 from app.database import get_db
 from app.auth import get_current_active_user, require_admin, can_view_all_data
 from app.models import User, EggProduction, ChickenManagement, CostRecord, EggSale, CashTransaction
@@ -58,7 +58,8 @@ def get_daily_statistics(
     if start_date:
         query = query.filter(EggProduction.date >= start_date)
     if end_date:
-        query = query.filter(EggProduction.date <= end_date)
+        # end_date inklusif seharian penuh (bukan tengah malam awal hari)
+        query = query.filter(EggProduction.date < end_date + timedelta(days=1))
 
     query = query.group_by(EggProduction.date).order_by(EggProduction.date.desc())
 
