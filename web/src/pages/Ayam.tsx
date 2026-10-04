@@ -78,6 +78,8 @@ function Register({ writable, userId, admin }: { writable: boolean; userId?: num
   const [formErr, setFormErr] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [photoErr, setPhotoErr] = useState<string | null>(null);
+  const [uploadingId, setUploadingId] = useState<number | null>(null);
+  const [brokenImg, setBrokenImg] = useState<Record<number, boolean>>({});
 
   function openCreate() {
     setEditing(null);
@@ -131,13 +133,21 @@ function Register({ writable, userId, admin }: { writable: boolean; userId?: num
   }
 
   async function onPhoto(c: Chicken, file: File | undefined) {
-    if (!file) return;
+    if (!file || uploadingId != null) return;
     setPhotoErr(null);
+    setUploadingId(c.id);
     try {
       await uploadPhoto(`/chickens/${c.id}/photo`, file);
+      setBrokenImg((prev) => {
+        const next = { ...prev };
+        delete next[c.id];
+        return next;
+      });
       await reload();
     } catch (e) {
       setPhotoErr(e instanceof Error ? e.message : 'Gagal mengunggah foto');
+    } finally {
+      setUploadingId(null);
     }
   }
 
@@ -165,10 +175,21 @@ function Register({ writable, userId, admin }: { writable: boolean; userId?: num
               const canDelete = admin || (userId != null && c.user_id === userId);
               return (
                 <div key={c.id} className="overflow-hidden rounded-2xl bg-white shadow">
-                  {url ? (
-                    <img src={url} alt={c.code} className="h-36 w-full object-cover" loading="lazy" />
+                  {url && !brokenImg[c.id] ? (
+                    <img
+                      src={url}
+                      alt={c.code}
+                      className="h-36 w-full object-cover"
+                      loading="lazy"
+                      onError={() => setBrokenImg((prev) => ({ ...prev, [c.id]: true }))}
+                    />
                   ) : (
-                    <div className="flex h-20 items-center justify-center bg-gray-100 text-3xl">🐔</div>
+                    <div className="flex h-20 items-center justify-center bg-gray-100 text-3xl">
+                      🐔
+                      {url && brokenImg[c.id] && (
+                        <span className="ml-2 text-xs text-red-500">gambar tidak bisa dimuat</span>
+                      )}
+                    </div>
                   )}
                   <div className="p-4">
                     <div className="flex items-center justify-between">
@@ -182,10 +203,15 @@ function Register({ writable, userId, admin }: { writable: boolean; userId?: num
                     {writable && (
                       <div className="mt-3 flex flex-wrap gap-2">
                         <Btn onClick={() => openEdit(c)}>Ubah</Btn>
-                        <label className="cursor-pointer rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
-                          Foto
+                        <label className={`rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 ${uploadingId === c.id ? 'cursor-wait opacity-60' : 'cursor-pointer'}`}>
+                          {uploadingId === c.id ? 'Mengunggah…' : 'Foto'}
                           <input type="file" accept=".jpg,.jpeg,.png,.webp" className="hidden"
-                            onChange={(e) => void onPhoto(c, e.target.files?.[0])} />
+                            disabled={uploadingId === c.id}
+                            onChange={(e) => {
+                              const f = e.target.files?.[0];
+                              e.target.value = '';
+                              void onPhoto(c, f);
+                            }} />
                         </label>
                         {canDelete && <Btn kind="danger" onClick={() => void onDelete(c)}>Hapus</Btn>}
                       </div>
