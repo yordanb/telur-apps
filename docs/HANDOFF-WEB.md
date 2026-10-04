@@ -30,6 +30,8 @@ skema di sini yang berlaku, bukan tebakan).
 - Ganti password: `PUT /api/auth/change-password`
   `{old_password, new_password(min 6)}` → 400 jika password lama salah
 - Logout: `POST /api/auth/logout` (butuh token; token dibuang di klien)
+- IP klien: `GET /api/auth/client-ip` (tanpa auth) → `{ip}` (hormat
+  `X-Forwarded-For`; untuk info di halaman login)
 - Log aktivitas: `GET /api/activity-logs/` (**admin only**,
   filter tanggal/aksi/username + `skip/limit`). Sumber: login sukses/
   gagal, logout, register, ganti password, CRUD user (eksplisit) +
@@ -207,3 +209,5 @@ Hak akses wajib meniru mobile: investor read-only, Manajemen User admin only.
   pilihan tersimpan per browser (`endog_sidebar`).
 - Bantuan (2026-10-04): halaman 📖 panduan per-menu (aturan + hak akses,
   banner sesuai role), grid tile Fiori + popup detail. Web saja.
+- Login info IP (2026-10-04): catatan JWT dihapus, tampil "IP Anda: …"
+  dari `GET /api/auth/client-ip`. Deploy backend + web.

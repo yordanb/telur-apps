@@ -1,13 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
-
-const ROLE_LABEL: Record<string, string> = {
-  admin: 'Admin',
-  pegawai: 'Pegawai',
-  investor: 'Investor',
-};
+import { API_URL } from '../lib/api';
 
 export default function Login() {
   const { user, loading, login } = useAuth();
@@ -16,6 +11,18 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [ip, setIp] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch(`${API_URL}/auth/client-ip`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d?.ip) setIp(d.ip as string);
+      })
+      .catch(() => {
+        /* IP opsional — halaman login tetap jalan */
+      });
+  }, []);
 
   if (!loading && user) return <Navigate to="/" replace />;
 
@@ -81,8 +88,7 @@ export default function Login() {
             {submitting ? 'Masuk…' : 'Masuk'}
           </button>
           <p className="text-center text-xs text-gray-500">
-            JWT disimpan lokal · kedaluwarsa 1440 mnt ·{' '}
-            {user ? ROLE_LABEL[user.role] ?? user.role : 'admin / pegawai / investor'}
+            IP Anda: {ip ?? '…'}
           </p>
         </form>
       </div>

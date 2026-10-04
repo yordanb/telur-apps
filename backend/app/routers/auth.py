@@ -97,6 +97,12 @@ def login(
     return {"access_token": access_token, "token_type": "bearer"}
 
 
+@router.get("/client-ip")
+def get_client_ip(request: Request):
+    """IP publik pemanggil (tanpa auth; untuk info di halaman login)."""
+    return {"ip": client_ip(request)}
+
+
 @router.post("/logout")
 def logout(
     request: Request,
