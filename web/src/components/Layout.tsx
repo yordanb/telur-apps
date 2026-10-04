@@ -20,6 +20,8 @@ const NAV: NavItem[] = [
   { to: '/biaya', label: 'Biaya', icon: '🧾' },
   { to: '/penjualan', label: 'Penjualan', icon: '💰' },
   { to: '/kas', label: 'Kas', icon: '👛' },
+  { to: '/keuangan', label: 'Keuangan', icon: '💳' },
+  { to: '/produktivitas', label: 'Produktivitas', icon: '🏆' },
   { to: '/pengguna', label: 'Pengguna', icon: '👥', adminOnly: true },
   { to: '/pengaturan', label: 'Pengaturan', icon: '⚙️' },
 ];

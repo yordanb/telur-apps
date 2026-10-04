@@ -147,8 +147,8 @@ Hak akses wajib meniru mobile: investor read-only, Manajemen User admin only.
   + compose terpisah `endog-web:8801` + nginx SPA fallback). Halaman:
   Login (JWT), Dashboard, Statistik, Produksi, Ayam (+foto), Pakan
   (pakai `/feedings/` + `/feedings/stock`), Biaya, Penjualan, Kas,
-  Pengguna (admin), Pengaturan (profil + ganti password).
-  Belum ada: halaman Keuangan & Produktivitas.
+  Pengguna (admin), Pengaturan (profil + ganti password),
+  Keuangan (neraca arus kas), Produktivitas (hen-day per ekor).
 - Backend bertambah (oleh tab web): `PUT /api/auth/change-password`
   (`old_password`, `new_password` min 6; 400 jika salah/pendek).
 - README.md repo diperbarui mengikuti implementasi (2026-10-04).

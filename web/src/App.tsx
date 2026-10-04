@@ -11,6 +11,8 @@ import Pakan from './pages/Pakan';
 import Biaya from './pages/Biaya';
 import Penjualan from './pages/Penjualan';
 import Kas from './pages/Kas';
+import Keuangan from './pages/Keuangan';
+import Produktivitas from './pages/Produktivitas';
 import Pengguna from './pages/Pengguna';
 import Pengaturan from './pages/Pengaturan';
 
@@ -43,6 +45,8 @@ export default function App() {
       <Route path="/biaya" element={authed(<Biaya />)} />
       <Route path="/penjualan" element={authed(<Penjualan />)} />
       <Route path="/kas" element={authed(<Kas />)} />
+      <Route path="/keuangan" element={authed(<Keuangan />)} />
+      <Route path="/produktivitas" element={authed(<Produktivitas />)} />
       <Route path="/pengguna" element={authed(<Pengguna />)} />
       <Route path="/pengaturan" element={authed(<Pengaturan />)} />
       <Route path="*" element={<Navigate to="/" replace />} />
