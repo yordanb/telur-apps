@@ -43,7 +43,7 @@ Aplikasi pencatatan produksi telur ayam: **backend FastAPI** + **aplikasi Androi
 │   ├── src/pages/          # Login, Dashboard, Statistik, Produksi, Ayam,
 │   │                       # Pakan, Biaya, Penjualan, Kas, Pengguna, Pengaturan
 │   ├── Dockerfile          # multi-stage node → nginx
-│   ├── docker-compose.yml  # endog-web (8801), lifecycle terpisah
+│   ├── docker-compose.yml  # egg-web (8801), lifecycle terpisah
 │   └── nginx.conf          # SPA fallback
 └── docs/
     └── HANDOFF-WEB.md      # Konteks antar-sesi (wajib dibaca tab baru)
@@ -103,7 +103,7 @@ Docker (terpisah dari backend):
 
 ```bash
 cd web
-docker compose up -d --build   # endog-web di 8801:80
+docker compose up -d --build   # egg-web di 8801:80
 ```
 
 Login memakai `POST {VITE_API_URL}/auth/login` (form-urlencoded), JWT di

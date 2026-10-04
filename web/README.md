@@ -17,7 +17,7 @@ Login memakai `POST {VITE_API_URL}/auth/login` (form-urlencoded) → JWT di
 
 ```bash
 cd web
-docker compose up -d --build   # endog-web di 8801:80
+docker compose up -d --build   # egg-web di 8801:80
 ```
 
 Routing satu domain (di `mibt-nginx` VPS, manual): `/` → `127.0.0.1:8801`,

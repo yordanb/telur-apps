@@ -132,7 +132,7 @@ Hak akses wajib meniru mobile: investor read-only, Manajemen User admin only.
 - `web/Dockerfile` multi-stage: `node:20-alpine` build → `nginx:alpine`
   serve statis + `web/nginx.conf` (fallback SPA `try_files`).
 - `web/docker-compose.yml` TERPISAH dari backend (lifecycle independen):
-  container `endog-web`, publish host `8801:80`, `restart: unless-stopped`.
+  container `egg-web`, publish host `8801:80`, `restart: unless-stopped`.
 - Config build-time: `VITE_API_URL=https://egg.mibt.my.id/api`
   (via `web/.env`, contoh di `web/.env.example` — jangan commit `.env`).
 - Routing satu domain (nginx VPS, dikelola manual):
@@ -161,7 +161,7 @@ Hak akses wajib meniru mobile: investor read-only, Manajemen User admin only.
   (belum dieksekusi saat dokumen ini ditulis).
 - Web dashboard: **scaffold + modul berjalan** (React 18 + Vite 5 + TS +
   Tailwind + react-router 6, basis TailAdmin; `web/` + Dockerfile multi-stage
-  + compose terpisah `endog-web:8801` + nginx SPA fallback). Halaman:
+  + compose terpisah `egg-web:8801` + nginx SPA fallback). Halaman:
   Login (JWT), Dashboard, Statistik, Produksi, Ayam (+foto), Pakan
   (pakai `/feedings/` + `/feedings/stock`), Biaya, Penjualan, Kas,
   Pengguna (admin), Pengaturan (profil + ganti password),
@@ -171,7 +171,7 @@ Hak akses wajib meniru mobile: investor read-only, Manajemen User admin only.
 - README.md repo diperbarui mengikuti implementasi (2026-10-04).
 - Web scaffold `web/` (2026-10-04): Vite React-TS + Tailwind + React Router,
   halaman Login (JWT), Dockerfile multi-stage + nginx.conf + docker-compose
-  terpisah (`endog-web` 8801:80). Sudah deploy VPS, Login jalan.
+  terpisah (`egg-web` 8801:80). Sudah deploy VPS, Login jalan.
 - Web milestone Dashboard+Statistik: sidebar TailAdmin-oranye + Dashboard
   ringkasan + halaman Statistik (filter tanggal + tahun). Sudah deploy, jalan.
 - Web milestone modul data (2026-10-04): Produksi (+rincian/ayam),
